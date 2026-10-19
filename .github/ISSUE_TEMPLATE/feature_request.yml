@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a gateway behavior, scenario, or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: When testing ... against the real sandbox, I cannot ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: Add ... so that ...
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: Official documentation link (for gateway behavior)
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
