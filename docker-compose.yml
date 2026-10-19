@@ -1,0 +1,57 @@
+# Local mode (primary): docker compose up
+# - db:  PostgreSQL 17
+# - api: Express API (also runs migrations on boot)
+# - web: built React dashboard behind nginx, proxying /api/* to the API
+name: paysim-bd
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: paysim
+      POSTGRES_PASSWORD: paysim
+      POSTGRES_DB: paysim
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U paysim -d paysim']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://paysim:paysim@db:5432/paysim
+      DB_POOL_MAX: 5
+      STORAGE_DRIVER: fs
+      STORAGE_FS_DIR: /data/blobs
+      ALLOW_PRIVATE_CALLBACK_TARGETS: 'true'
+    volumes:
+      - blobs:/data/blobs
+    ports:
+      - '3001:3001'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  blobs:
