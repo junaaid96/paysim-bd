@@ -1,0 +1,15 @@
+{
+  "paymentId": "{{paymentId}}",
+  "verificationStatus": "Incomplete",
+  "payerReference": "01712345678",
+  "payerAccount": "01712345678",
+  "payerType": "Customer",
+  "paymentCreateTime": { "$any": "string" },
+  "amount": "150.75",
+  "currency": "BDT",
+  "intent": "sale",
+  "merchantInvoice": { "$regex": "^INV-PARITY-" },
+  "transactionStatus": "Initiated",
+  "subMerchantName": "",
+  "maxRefundableAmount": "150.75"
+}

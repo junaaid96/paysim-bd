@@ -8,6 +8,20 @@
       "when": 1792437797866,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792444450964,
+      "tag": "0001_session-key",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792445310492,
+      "tag": "0002_jobs",
+      "breakpoints": true
     }
   ]
 }

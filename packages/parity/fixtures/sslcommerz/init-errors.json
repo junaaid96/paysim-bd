@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "name": "init-errors",
+  "gateway": "sslcommerz",
+  "source": "docs-sample",
+  "sourceUrl": "https://developer.sslcommerz.com/doc/v4/",
+  "notes": "Gateway-shaped failures still answer HTTP 200 with status FAILED (documented behavior); only malformed bodies get HTTP 400.",
+  "setupApp": {
+    "gateway": "sslcommerz",
+    "name": "Parity store",
+    "credentials": { "store_id": "testbox", "store_passwd": "qwerty" }
+  },
+  "steps": [
+    {
+      "name": "bad-credentials",
+      "covers": ["POST /gwprocess/v4/api.php"],
+      "request": {
+        "method": "POST",
+        "path": "/gwprocess/v4/api.php",
+        "form": {
+          "store_id": "testbox",
+          "store_passwd": "wrong",
+          "total_amount": "100.00",
+          "currency": "BDT",
+          "tran_id": "PARITY-ERR-{{$rand8}}",
+          "product_category": "parity-goods",
+          "success_url": "https://merchant.test/success",
+          "fail_url": "https://merchant.test/fail",
+          "cancel_url": "https://merchant.test/cancel"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "shape": { "status": "FAILED", "failedreason": "Invalid store credentials" }
+      }
+    },
+    {
+      "name": "unknown-validation",
+      "covers": ["GET /validator/api/validationserverAPI.php"],
+      "request": {
+        "method": "GET",
+        "path": "/validator/api/validationserverAPI.php?format=json&val_id=NOPE-NOPE&store_id=testbox&store_passwd=qwerty"
+      },
+      "expect": {
+        "status": 200,
+        "shape": { "status": "INVALID_TRANSACTION" }
+      }
+    }
+  ]
+}

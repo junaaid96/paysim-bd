@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "name": "grant-create-query",
+  "gateway": "bkash",
+  "source": "docs-sample",
+  "sourceUrl": "https://developer.bka.sh/docs/create-payment-3.md",
+  "notes": "Doc-sample flow: grant -> create -> query (Initiated/Incomplete). The query shape is asserted from a storage-backed body file to exercise the jsonKey/shapeKey path for large recordings.",
+  "setupApp": {
+    "gateway": "bkash",
+    "name": "Parity merchant",
+    "credentials": {
+      "app_key": "sim-app-key",
+      "app_secret": "sim-app-secret-key",
+      "username": "sim-merchant",
+      "password": "sim-merchant-password"
+    }
+  },
+  "steps": [
+    {
+      "name": "grant",
+      "covers": ["POST /v2/tokenized-checkout/auth/grant-token"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/auth/grant-token",
+        "headers": { "username": "sim-merchant", "password": "sim-merchant-password" },
+        "json": { "app_key": "sim-app-key", "app_secret": "sim-app-secret-key" }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "statusCode": "0000",
+          "statusMessage": "Successful",
+          "token_type": "Bearer",
+          "id_token": { "$any": "string" },
+          "refresh_token": { "$any": "string" },
+          "expires_in": { "$any": "number" }
+        }
+      },
+      "capture": { "id_token": "id_token", "refresh_token": "refresh_token" }
+    },
+    {
+      "name": "create",
+      "covers": ["POST /v2/tokenized-checkout/payment/create"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/payment/create",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": {
+          "payerReference": "01712345678",
+          "callbackURL": "https://merchant.test/cb",
+          "amount": "150.75",
+          "currency": "BDT",
+          "intent": "sale",
+          "merchantInvoiceNumber": "INV-PARITY-{{$rand8}}"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "paymentId": { "$regex": "^TR0011[0-9A-Za-z]{7}[0-9]+$" },
+          "bkashURL": { "$regex": "/bkash/checkout" },
+          "callbackURL": "https://merchant.test/cb",
+          "successCallbackURL": { "$regex": "status=success" },
+          "failureCallbackURL": { "$regex": "status=failure" },
+          "cancelledCallbackURL": { "$regex": "status=cancel" },
+          "amount": "150.75",
+          "intent": "sale",
+          "currency": "BDT",
+          "paymentCreateTime": { "$any": "string" },
+          "transactionStatus": "Initiated",
+          "merchantInvoiceNumber": { "$regex": "^INV-PARITY-" },
+          "signature": { "$any": "string" }
+        }
+      },
+      "capture": { "paymentId": "paymentId" }
+    },
+    {
+      "name": "query-initiated",
+      "covers": ["POST /v2/tokenized-checkout/query/payment"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/query/payment",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": { "paymentId": "{{paymentId}}" }
+      },
+      "expect": {
+        "status": 200,
+        "shapeKey": "bkash/bodies/query-initiated.shape.json"
+      }
+    }
+  ]
+}

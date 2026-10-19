@@ -9,14 +9,15 @@
   },
   "scripts": {
     "dev": "pnpm --filter @paysim/api --filter @paysim/web --parallel dev",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @paysim/api db:generate",
-    "db:migrate": "pnpm --filter @paysim/api db:migrate"
+    "db:migrate": "pnpm --filter @paysim/api db:migrate",
+    "parity": "pnpm --filter @paysim/parity parity"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

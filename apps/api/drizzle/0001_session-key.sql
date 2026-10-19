@@ -1,0 +1,2 @@
+ALTER TABLE "transactions" ADD COLUMN "gateway_session_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "transactions_gateway_session_unique" ON "transactions" USING btree ("gateway","gateway_session_key");

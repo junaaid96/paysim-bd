@@ -25,7 +25,7 @@ maybe('db integration', () => {
     await runMigrations(db);
     await runMigrations(db);
     await db.execute(
-      sql`TRUNCATE workspaces, scenarios, gateway_apps, transactions, events, callback_deliveries, clock_state, recordings`,
+      sql`TRUNCATE workspaces, scenarios, gateway_apps, transactions, events, callback_deliveries, clock_state, recordings, jobs`,
     );
   }, 60_000);
 

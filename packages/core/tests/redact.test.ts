@@ -26,6 +26,8 @@ describe('redactValue', () => {
       card_number: 'c',
       verify_sign: 'd',
       storePasswd: 'e',
+      sensitiveData: 'f',
+      sensitive_data: 'g',
     };
     const out = redactValue(input) as Record<string, string>;
     expect(Object.values(out).every((v) => v === REDACTED)).toBe(true);

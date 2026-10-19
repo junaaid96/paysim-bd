@@ -1,5 +1,7 @@
 import pino, { type Logger } from 'pino';
 
+import type { PluginLogger } from '@paysim/core';
+
 import type { Env } from './env.js';
 
 /** JSON logger with secret redaction. Pretty-prints in development only. */
@@ -26,4 +28,14 @@ export function createLogger(env: Env): Logger {
         ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
         : undefined,
   });
+}
+
+/** Adapt pino to the plugin logger surface. */
+export function adaptPino(logger: Logger): PluginLogger {
+  const write =
+    (level: 'debug' | 'info' | 'warn' | 'error') =>
+    (message: string, data?: unknown): void => {
+      logger[level](data === undefined ? {} : { data }, message);
+    };
+  return { debug: write('debug'), info: write('info'), warn: write('warn'), error: write('error') };
 }

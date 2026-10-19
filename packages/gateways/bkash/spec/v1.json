@@ -1,0 +1,489 @@
+{
+  "gateway": "bkash",
+  "displayName": "bKash",
+  "version": "v1",
+  "fidelity": "docs-only",
+  "docSources": [
+    "https://developer.bka.sh/docs/grant-token.md",
+    "https://developer.bka.sh/docs/refresh-token.md",
+    "https://developer.bka.sh/docs/create-payment-3.md",
+    "https://developer.bka.sh/docs/execute-payment-4.md",
+    "https://developer.bka.sh/docs/query-payment.md",
+    "https://developer.bka.sh/docs/payment-error-codes.md"
+  ],
+  "sandboxHosts": ["tokenized.sandbox.bka.sh"],
+  "productionHosts": [],
+  "contentTypes": ["application/json"],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/auth/grant-token",
+      "purpose": "Issue id_token + refresh_token for app credentials",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/auth/refresh-token",
+      "purpose": "Rotate an id_token without re-authenticating",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/refresh-token.md"]
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/payment/create",
+      "purpose": "Create a one-time payment, returns bKashURL + callback URLs",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"]
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/payment/execute",
+      "purpose": "Complete a verified payment, returns trxId",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"]
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/query/payment",
+      "purpose": "Look up payment state (execute-timeout fallback)",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"]
+    },
+    {
+      "method": "GET",
+      "path": "/bkash/checkout",
+      "purpose": "Simulator-only mock payment page (Success/Fail/Cancel)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "No official counterpart: the real payment page lives on sandbox.payment.bkash.com, a different host."
+    },
+    {
+      "method": "POST",
+      "path": "/bkash/checkout",
+      "purpose": "Mock page button handler, renders the GET redirect page",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Simulator-only; see GET /bkash/checkout."
+    }
+  ],
+  "fields": [
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "username (header)",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "password (header)",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "app_key",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "app_secret",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "statusCode",
+      "location": "response",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"],
+      "notes": "'0000' on success, '9999' on credential failure (sample-verified)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "statusMessage",
+      "location": "response",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "token_type",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"],
+      "notes": "Always 'Bearer'."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "id_token",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"],
+      "notes": "Opaque; simulator issues sim_id_* values."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "refresh_token",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"],
+      "notes": "Opaque; simulator issues sim_rt_* values valid 30 days."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/grant-token",
+      "name": "expires_in",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/grant-token.md"],
+      "notes": "Table says string, sample shows number 3600; simulator emits the number."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/auth/refresh-token",
+      "name": "refresh_token",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/refresh-token.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "X-App-Key (header)",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "Authorization (header)",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Sample sends the raw id_token; simulator also accepts 'Bearer <token>'."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "payerReference",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Max 255, regex ^[^<>&]*$. Numeric 11-digit values preset payerAccount in responses."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "callbackURL",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Must be absolute http(s); http allowed for localhost dev (simulator leniency)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "amount",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Decimal string. Simulator requires > 0 with at most 2 decimals (2006); responses normalize to 2dp."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "currency",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "BDT only (2007)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "intent",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "'sale' for checkout (2008)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "merchantInvoiceNumber",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Max 255, regex ^[^<>&]*$. Carries the SIM: magic scenario marker."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "subMerchantName",
+      "location": "request",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Optional, aggregators only, max 80."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "merchantAssociationInfo",
+      "location": "request",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Optional TLV, max 255. TLV structure not validated (simulator leniency)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "paymentId",
+      "location": "response",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "TR + 4 digits + 7 alnum + epoch millis; valid 24h; execute-once."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "paymentCreateTime",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Sample shape yyyy-MM-dd'T'HH:mm:ss:SSS GMT+0600 (colon millis, Dhaka time)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "transactionStatus",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "'Initiated' on creation."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "bKashURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Field verified; value points at the simulator mock page by design."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "successCallbackURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "failureCallbackURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "cancelledCallbackURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/create",
+      "name": "signature",
+      "location": "response",
+      "fidelity": "unverified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Field exists per docs ('unique value for validation'); generation algorithm unpublished, simulator emits random values."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "paymentId",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "payerAccount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"],
+      "notes": "Wallet number; simulator fixture unless payerReference preset it."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "paymentExecuteTime",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "trxId",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"],
+      "notes": "9-char A-Z0-9 per samples; created on completion."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "transactionStatus",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"],
+      "notes": "'Completed' on success."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "payerType",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"],
+      "notes": "Simulator always 'Customer'."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/payment/execute",
+      "name": "maxRefundableAmount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/execute-payment-4.md"],
+      "notes": "Equals amount; the simulator never issues coupons."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/query/payment",
+      "name": "paymentId",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"]
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/query/payment",
+      "name": "verificationStatus",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"],
+      "notes": "'Complete' once verified (even before execute), else 'Incomplete'."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/query/payment",
+      "name": "transactionStatus",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"],
+      "notes": "'Completed' on success, 'Initiated' otherwise (incl. failed/cancelled verification)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/query/payment",
+      "name": "merchantInvoice",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"],
+      "notes": "Note the name: merchantInvoice here vs merchantInvoiceNumber elsewhere (sample-verified quirk)."
+    },
+    {
+      "endpoint": "POST /v2/tokenized-checkout/query/payment",
+      "name": "paymentUpdateTime",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/query-payment.md"],
+      "notes": "Last status change; present once verified."
+    },
+    {
+      "endpoint": "payment error shape",
+      "name": "externalCode",
+      "location": "response",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/payment-error-codes.md"]
+    },
+    {
+      "endpoint": "payment error shape",
+      "name": "errorMessageEn",
+      "location": "response",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/payment-error-codes.md"]
+    },
+    {
+      "endpoint": "payment error shape",
+      "name": "internalCode",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.bka.sh/docs/create-payment-3.md",
+        "https://developer.bka.sh/docs/execute-payment-4.md",
+        "https://developer.bka.sh/docs/query-payment.md"
+      ],
+      "notes": "Sample-observed only (invalid_currency, payment_already_completed, invalid_payment_id); omitted elsewhere."
+    },
+    {
+      "endpoint": "payment error shape",
+      "name": "errorMessageBn",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.bka.sh/docs/create-payment-3.md",
+        "https://developer.bka.sh/docs/execute-payment-4.md",
+        "https://developer.bka.sh/docs/query-payment.md"
+      ],
+      "notes": "Samples show null; simulator always emits null."
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "paymentID",
+      "location": "callback",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Note the casing: paymentID in callbacks vs paymentId in APIs."
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "status",
+      "location": "callback",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "success | failure | cancel."
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "signature",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": ["https://developer.bka.sh/docs/create-payment-3.md"],
+      "notes": "Param exists per sample; value semantics unpublished."
+    }
+  ],
+  "hashRules": [],
+  "notes": [
+    "Callback transport is docs-only: the docs show callback URLs carrying paymentID+status+signature and say bKash 'calls' them; the simulator implements a customer-browser GET redirect with no server-to-server POST, since tokenized checkout documents no webhook. send_ipn scenario actions skip with an event.",
+    "Business-rule failures answer HTTP 200 with the gateway error shape (house rule, docs-only: samples imply JSON bodies, HTTP statuses unstated). Only malformed JSON gets HTTP 400 from the framework.",
+    "Error-code mappings that are simulator choices (all codes real, from payment-error-codes.md): bad/expired token -> 2003, expired paymentId -> 2002, execute-on-failed/cancelled -> 2056, malformed optionals -> 2025. internalCode only with sample-verified values.",
+    "Execute pre-condition rejections (2060/2056) do not burn the paymentId; only a completed execution does (2062). Docs say a paymentId 'cannot be reused after an execute attempt regardless of the result' — the simulator reads 'attempt' as an accepted execution (docs-only interpretation).",
+    "The grant-token rate limit (2/hour) is not enforced; the token registry is in-memory per process, so restarts invalidate tokens.",
+    "productionHosts is empty: no v2 production host is published in the consulted docs.",
+    "Agreements, auth & capture, refunds and search are out of scope; coupon/agreement/serviceFee response fields are omitted.",
+    "Token values (sim_id_*, sim_rt_*), trxId/payerAccount fixtures and the '0011' paymentId infix are simulator choices; shapes follow the doc samples."
+  ]
+}

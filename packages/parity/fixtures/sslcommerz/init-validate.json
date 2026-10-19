@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "name": "init-validate",
+  "gateway": "sslcommerz",
+  "source": "docs-sample",
+  "sourceUrl": "https://developer.sslcommerz.com/doc/v4/",
+  "notes": "Doc-sample flow: init (form post) -> mock page view -> success click -> validation API. val_id is read back through the management API (covers: []), the way a merchant would receive it over IPN.",
+  "setupApp": {
+    "gateway": "sslcommerz",
+    "name": "Parity store",
+    "credentials": { "store_id": "testbox", "store_passwd": "qwerty" }
+  },
+  "steps": [
+    {
+      "name": "init",
+      "covers": ["POST /gwprocess/v4/api.php"],
+      "request": {
+        "method": "POST",
+        "path": "/gwprocess/v4/api.php",
+        "form": {
+          "store_id": "testbox",
+          "store_passwd": "qwerty",
+          "total_amount": "100.00",
+          "currency": "BDT",
+          "tran_id": "PARITY-{{$rand8}}",
+          "product_category": "parity-goods",
+          "success_url": "https://merchant.test/success",
+          "fail_url": "https://merchant.test/fail",
+          "cancel_url": "https://merchant.test/cancel",
+          "value_a": "A1",
+          "value_d": "plain"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "status": "SUCCESS",
+          "failedreason": "",
+          "sessionkey": { "$regex": "^[0-9A-F]{32}$" },
+          "gw": { "$any": "object" },
+          "redirectGatewayURL": { "$regex": "SESSIONKEY=" },
+          "directPaymentURLBank": "",
+          "directPaymentURLCard": "",
+          "directPaymentURL": "",
+          "redirectGatewayURLFailed": "",
+          "GatewayPageURL": { "$regex": "SESSIONKEY=" },
+          "storeBanner": "",
+          "storeLogo": "",
+          "desc": { "$any": "array" },
+          "is_direct_pay_enable": "0"
+        }
+      },
+      "capture": { "sessionkey": "sessionkey" }
+    },
+    {
+      "name": "view-mock-page",
+      "covers": ["GET /gwprocess/v4/gw.php"],
+      "request": {
+        "method": "GET",
+        "path": "/gwprocess/v4/gw.php?Q=PAY&SESSIONKEY={{sessionkey}}"
+      },
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "click-success",
+      "covers": ["POST /gwprocess/v4/gw.php"],
+      "request": {
+        "method": "POST",
+        "path": "/gwprocess/v4/gw.php",
+        "form": { "SESSIONKEY": "{{sessionkey}}", "action": "success" }
+      },
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "read-val-id",
+      "covers": [],
+      "request": {
+        "method": "GET",
+        "path": "/api/txns?gateway=sslcommerz&state=valid&limit=1"
+      },
+      "expect": { "status": 200 },
+      "capture": { "val_id": "0.metadata.valId", "tran_id": "0.gatewayTxnId" }
+    },
+    {
+      "name": "validate",
+      "covers": ["GET /validator/api/validationserverAPI.php"],
+      "request": {
+        "method": "GET",
+        "path": "/validator/api/validationserverAPI.php?format=json&val_id={{val_id}}&store_id=testbox&store_passwd=qwerty"
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "status": "VALID",
+          "tran_date": { "$any": "string" },
+          "tran_id": "{{tran_id}}",
+          "val_id": "{{val_id}}",
+          "amount": "100.00",
+          "store_amount": "100.00",
+          "currency": "BDT",
+          "bank_tran_id": { "$any": "string" },
+          "card_type": "VISA-TestBank",
+          "card_no": "411111XXXXXX1111",
+          "card_issuer": "Test Bank",
+          "card_brand": "VISA",
+          "card_issuer_country": "Bangladesh",
+          "card_issuer_country_code": "BD",
+          "currency_type": "BDT",
+          "currency_amount": "100.00",
+          "currency_rate": "1.0000",
+          "base_fair": "0.00",
+          "value_a": "A1",
+          "value_b": "",
+          "value_c": "",
+          "value_d": "plain",
+          "emi_instalment": "0",
+          "emi_amount": "0.00",
+          "emi_description": "",
+          "emi_issuer": "",
+          "account_details": "",
+          "risk_title": "Safe",
+          "risk_level": "0",
+          "APIConnect": "DONE",
+          "validated_on": { "$any": "string" },
+          "gw_version": ""
+        }
+      }
+    }
+  ]
+}

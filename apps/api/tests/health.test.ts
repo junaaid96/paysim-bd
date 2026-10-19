@@ -7,8 +7,15 @@ import pino from 'pino';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 
+import { SystemClock, type PluginStores, type ScenarioEngine } from '@paysim/core';
+
 import { createApp } from '../src/app.js';
+import type { DbClock } from '../src/clock.js';
+import type { Db } from '../src/db/client.js';
+import { EventBus } from '../src/events/bus.js';
+import type { Queries } from '../src/stores/drizzle-stores.js';
 import type { StorageAdapter } from '../src/storage/index.js';
+import type { TxnOpsDeps } from '../src/txn-ops.js';
 import { makeEnv } from './helpers.js';
 
 function makeApp(
@@ -20,6 +27,21 @@ function makeApp(
     version: 'test-version',
     checkDb: options.checkDb ?? (async () => undefined),
     storage: {} as unknown as StorageAdapter,
+    db: {} as unknown as Db,
+    plugins: [],
+    stores: {} as unknown as PluginStores,
+    queries: { getWorkspaceByKey: async () => null } as unknown as Queries,
+    bus: new EventBus(),
+    clock: new SystemClock(),
+    dbClock: new SystemClock() as unknown as DbClock,
+    simBaseUrl: 'http://sim.test',
+    deliverCallback: () => Promise.reject(new Error('deliverCallback not stubbed')),
+    engine: {
+      resolveForInit: () => Promise.reject(new Error('engine not stubbed')),
+      attach: () => Promise.reject(new Error('engine not stubbed')),
+    } as unknown as ScenarioEngine,
+    ops: {} as unknown as TxnOpsDeps,
+    kick: () => undefined,
   });
 }
 

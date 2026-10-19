@@ -1,0 +1,300 @@
+{
+  "gateway": "nagad",
+  "displayName": "Nagad",
+  "version": "v1",
+  "fidelity": "unverified",
+  "docSources": [
+    "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py",
+    "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment_verify.py",
+    "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/utils.py",
+    "https://raw.githubusercontent.com/foxses-studio/foxses-pay/HEAD/docs/providers/nagad.md",
+    "https://raw.githubusercontent.com/humayunshariarhimu/nagad-api/HEAD/README.md"
+  ],
+  "sandboxHosts": [],
+  "productionHosts": [],
+  "contentTypes": ["application/json"],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/remote-payment-gateway-1.0/api/dfs/check-out/initialize/{merchantId}/{orderId}",
+      "purpose": "Open a payment session, returns encrypted paymentReferenceId + challenge",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Community-sourced path; no official docs reachable. Sandbox base host is disputed (see notes)."
+    },
+    {
+      "method": "POST",
+      "path": "/remote-payment-gateway-1.0/api/dfs/check-out/complete/{paymentReferenceId}",
+      "purpose": "Submit order details, returns the checkout (callBackUrl) URL",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/remote-payment-gateway-1.0/api/dfs/verify/payment/{paymentReferenceId}",
+      "purpose": "Look up payment status after the callback",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment_verify.py"
+      ],
+      "notes": "Path community-sourced; response shape is simulator-invented (no source shows it)."
+    },
+    {
+      "method": "GET",
+      "path": "/nagad/checkout",
+      "purpose": "Simulator-only mock payment page (Success/Fail/Cancel)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Simulator-only mock page; no official counterpart."
+    },
+    {
+      "method": "POST",
+      "path": "/nagad/checkout",
+      "purpose": "Mock page button handler, renders the GET redirect page",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Simulator-only; see GET /nagad/checkout."
+    },
+    {
+      "method": "POST",
+      "path": "/remote-payment-gateway-1.0/api/dfs/check-out/refund/{merchantId}",
+      "purpose": "Reverse a completed payment",
+      "implemented": false,
+      "fidelity": "unverified",
+      "sources": ["https://raw.githubusercontent.com/humayunshariarhimu/nagad-api/HEAD/README.md"],
+      "notes": "Out of scope; path shown for orientation only."
+    }
+  ],
+  "fields": [
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "merchantId (path)",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "orderId (path)",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Unique per merchant; carries the SIM: magic scenario marker."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "X-KM-IP-V4 (header)",
+      "location": "request",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Accepted but not required (simulator leniency)."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "X-KM-Client-Type (header)",
+      "location": "request",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Accepted but ignored."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "X-KM-Api-Version (header)",
+      "location": "request",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Community value v-0.2.0; accepted but ignored."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "dateTime",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/utils.py"
+      ],
+      "notes": "YYYYMMDDHHMMSS Asia/Dhaka per community code."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "sensitiveData",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Base64 RSA(PKCS1v15) of JSON {merchantId, orderId, challenge}; decrypted and verified by the simulator."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "signature",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Base64 RSA(PKCS1v15+SHA256) over the plaintext JSON; verified against the app merchant key."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "sensitiveData",
+      "location": "response",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Encrypted JSON {paymentReferenceId, challenge} (merchant decrypts with its private key)."
+    },
+    {
+      "endpoint": "POST .../check-out/initialize/{merchantId}/{orderId}",
+      "name": "signature",
+      "location": "response",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Simulator signs with the published fake Nagad key."
+    },
+    {
+      "endpoint": "POST .../check-out/complete/{paymentReferenceId}",
+      "name": "sensitiveData",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Encrypted JSON {merchantId, orderId, amount, challenge}."
+    },
+    {
+      "endpoint": "POST .../check-out/complete/{paymentReferenceId}",
+      "name": "merchantCallbackURL",
+      "location": "request",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "endpoint": "POST .../check-out/complete/{paymentReferenceId}",
+      "name": "additionalMerchantInfo",
+      "location": "request",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Stored opaquely; community sends {}."
+    },
+    {
+      "endpoint": "POST .../check-out/complete/{paymentReferenceId}",
+      "name": "callBackUrl",
+      "location": "response",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Value points at the simulator mock page by design."
+    },
+    {
+      "endpoint": "POST .../check-out/complete/{paymentReferenceId}",
+      "name": "status",
+      "location": "response",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "endpoint": "GET .../verify/payment/{paymentReferenceId}",
+      "name": "status",
+      "location": "response",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/foxses-studio/foxses-pay/HEAD/docs/providers/nagad.md"
+      ],
+      "notes": "Success | PENDING | ABORTED | FAIL (community status mapping; whole response shape invented)."
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "payment_ref_id",
+      "location": "callback",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/foxses-studio/foxses-pay/HEAD/docs/providers/nagad.md",
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "order_id",
+      "location": "callback",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/foxses-studio/foxses-pay/HEAD/docs/providers/nagad.md",
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ]
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "status",
+      "location": "callback",
+      "required": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/foxses-studio/foxses-pay/HEAD/docs/providers/nagad.md"
+      ],
+      "notes": "Success | Fail | Cancel."
+    },
+    {
+      "endpoint": "merchant callback redirect",
+      "name": "merchant",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [
+        "https://raw.githubusercontent.com/MahmudulHassan5809/nagadpy/HEAD/src/nagadpy/payment.py"
+      ],
+      "notes": "Merchant id echo; status_code/message params omitted (values unknown)."
+    }
+  ],
+  "hashRules": [],
+  "notes": [
+    "No official Nagad API documentation is publicly reachable (developer.nagad.com.bd does not resolve; nagad.com.bd blocks automated fetching; no API pages indexed). Every endpoint and field is community-sourced and marked unverified.",
+    "Sandbox base host is disputed between community sources (https://sandboxapi.nagad.com.bd vs http://sandbox.mynagad.com:10080 with the same /remote-payment-gateway-1.0/api/dfs path), so sandboxHosts/productionHosts are empty.",
+    "Error shapes are simulator-invented ({status:'Failed', message} over HTTP 400/404): no source shows real error bodies.",
+    "The verify response shape is simulator-invented; only the status vocabulary is community-sourced.",
+    "Crypto is real RSA with published fake keys (spec/fixtures): requests decrypted with the fake Nagad private key, signatures verified against each app's merchant public key, responses encrypted for the merchant. This proves message shape, never identity.",
+    "Callback transport (browser GET redirect, no server POST) follows the community client code; send_ipn scenario actions skip with an event.",
+    "Refunds are out of scope."
+  ]
+}

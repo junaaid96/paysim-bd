@@ -6,7 +6,7 @@
 import { REDACTED } from './constants.js';
 
 const SECRET_KEY_PATTERN =
-  /(passw(or)?d|passwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|authorization|auth|cookie|set-cookie|card[_-]?num(ber)?|cvv|cvc|pin|otp|signature|sign|hash|store[_-]?passwd)/i;
+  /(passw(or)?d|passwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|authorization|auth|cookie|set-cookie|card[_-]?num(ber)?|cvv|cvc|pin|otp|signature|sign|hash|store[_-]?passwd|sensitive[_-]?data)/i;
 
 const BEARER_PATTERN = /^(bearer|basic)\s+.+/i;
 

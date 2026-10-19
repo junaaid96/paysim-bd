@@ -8,7 +8,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@paysim/core": ["../../packages/core/src/index.ts"]
+      "@paysim/core": ["../../packages/core/src/index.ts"],
+      "@paysim/gateway-sslcommerz": ["../../packages/gateways/sslcommerz/src/index.ts"]
     }
   },
   "include": ["src", "tests", "drizzle.config.ts", "vitest.config.ts"]

@@ -20,6 +20,7 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
     ALLOW_PRIVATE_CALLBACK_TARGETS: true,
     CORS_ORIGIN: undefined,
     WEB_DIST_DIR: undefined,
+    SIM_BASE_URL: undefined,
     ...overrides,
   };
 }

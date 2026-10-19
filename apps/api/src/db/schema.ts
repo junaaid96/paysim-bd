@@ -89,6 +89,8 @@ export const transactions = pgTable(
     state: text('state').notNull(),
     /** Gateway-side reference (e.g. SSLCommerz tran_id). */
     gatewayTxnId: text('gateway_txn_id'),
+    /** Checkout session reference (e.g. SSLCommerz sessionkey). */
+    gatewaySessionKey: text('gateway_session_key'),
     amountMinor: integer('amount_minor').notNull(),
     currency: text('currency').notNull().default('BDT'),
     customer: jsonb('customer').$type<Record<string, unknown>>().notNull().default({}),
@@ -105,6 +107,7 @@ export const transactions = pgTable(
   (t) => [
     // NULL gatewayTxnIds never collide (Postgres treats NULLs as distinct).
     uniqueIndex('transactions_gateway_ref_unique').on(t.gateway, t.gatewayTxnId),
+    uniqueIndex('transactions_gateway_session_unique').on(t.gateway, t.gatewaySessionKey),
     index('transactions_workspace_list_idx').on(t.workspaceId, t.createdAt),
   ],
 );
@@ -166,6 +169,40 @@ export const callbackDeliveries = pgTable(
   ],
 );
 export type CallbackDelivery = typeof callbackDeliveries.$inferSelect;
+
+/**
+ * Persisted scheduled jobs (Phase 2): scenario steps, session expiry,
+ * delivery retries. The scheduler arms ONE in-process
+ * timer for the earliest pending row and disarms when none remain, so an
+ * idle Neon database still scales to zero. Anything overdue runs on boot.
+ */
+export const jobs = pgTable(
+  'jobs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').references(() => transactions.id, {
+      onDelete: 'cascade',
+    }),
+    /** scenario-step | session-expiry | delivery-retry */
+    type: text('type').notNull(),
+    payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
+    runAt: timestamp('run_at', { withTimezone: true, mode: 'date' }).notNull(),
+    /** pending | running | done | failed | cancelled */
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('jobs_due_idx').on(t.status, t.runAt),
+    index('jobs_transaction_idx').on(t.transactionId),
+  ],
+);
+export type Job = typeof jobs.$inferSelect;
 
 /** Per-workspace fake-clock offset in milliseconds (Phase 2). */
 export const clockState = pgTable('clock_state', {

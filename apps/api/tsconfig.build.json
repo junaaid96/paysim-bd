@@ -6,7 +6,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@paysim/core": ["../../packages/core/dist/index.d.ts"]
+      "@paysim/core": ["../../packages/core/dist/index.d.ts"],
+      "@paysim/gateway-sslcommerz": ["../../packages/gateways/sslcommerz/dist/index.d.ts"]
     }
   },
   "include": ["src"]

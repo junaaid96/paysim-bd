@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "name": "refresh-verify-execute",
+  "gateway": "bkash",
+  "source": "docs-sample",
+  "sourceUrl": "https://developer.bka.sh/docs/execute-payment-4.md",
+  "notes": "Refresh-token rotation, execute-before-verify (2060), mock-page verification, execute (Completed), and double-execute (2062).",
+  "setupApp": {
+    "gateway": "bkash",
+    "name": "Parity merchant",
+    "credentials": {
+      "app_key": "sim-app-key",
+      "app_secret": "sim-app-secret-key",
+      "username": "sim-merchant",
+      "password": "sim-merchant-password"
+    }
+  },
+  "steps": [
+    {
+      "name": "grant",
+      "covers": ["POST /v2/tokenized-checkout/auth/grant-token"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/auth/grant-token",
+        "headers": { "username": "sim-merchant", "password": "sim-merchant-password" },
+        "json": { "app_key": "sim-app-key", "app_secret": "sim-app-secret-key" }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "statusCode": "0000",
+          "statusMessage": "Successful",
+          "token_type": "Bearer",
+          "id_token": { "$any": "string" },
+          "refresh_token": { "$any": "string" },
+          "expires_in": { "$any": "number" }
+        }
+      },
+      "capture": { "id_token": "id_token", "refresh_token": "refresh_token" }
+    },
+    {
+      "name": "refresh",
+      "covers": ["POST /v2/tokenized-checkout/auth/refresh-token"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/auth/refresh-token",
+        "headers": { "username": "sim-merchant", "password": "sim-merchant-password" },
+        "json": {
+          "app_key": "sim-app-key",
+          "app_secret": "sim-app-secret-key",
+          "refresh_token": "{{refresh_token}}"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "statusCode": "0000",
+          "statusMessage": "Successful",
+          "token_type": "Bearer",
+          "id_token": { "$any": "string" },
+          "refresh_token": { "$any": "string" },
+          "expires_in": { "$any": "number" }
+        }
+      },
+      "capture": { "id_token": "id_token" }
+    },
+    {
+      "name": "create",
+      "covers": ["POST /v2/tokenized-checkout/payment/create"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/payment/create",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": {
+          "payerReference": "TEST-PARITY",
+          "callbackURL": "https://merchant.test/cb",
+          "amount": "20.00",
+          "currency": "BDT",
+          "intent": "sale",
+          "merchantInvoiceNumber": "INV-PARITY-{{$rand8}}"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "paymentId": { "$regex": "^TR0011[0-9A-Za-z]{7}[0-9]+$" },
+          "bkashURL": { "$regex": "/bkash/checkout" },
+          "callbackURL": "https://merchant.test/cb",
+          "successCallbackURL": { "$regex": "status=success" },
+          "failureCallbackURL": { "$regex": "status=failure" },
+          "cancelledCallbackURL": { "$regex": "status=cancel" },
+          "amount": "20.00",
+          "intent": "sale",
+          "currency": "BDT",
+          "paymentCreateTime": { "$any": "string" },
+          "transactionStatus": "Initiated",
+          "merchantInvoiceNumber": { "$regex": "^INV-PARITY-" },
+          "signature": { "$any": "string" }
+        }
+      },
+      "capture": { "paymentId": "paymentId" }
+    },
+    {
+      "name": "execute-before-verify",
+      "covers": ["POST /v2/tokenized-checkout/payment/execute"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/payment/execute",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": { "paymentId": "{{paymentId}}" }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "externalCode": "2060",
+          "errorMessageEn": { "$any": "string" },
+          "errorMessageBn": null
+        }
+      }
+    },
+    {
+      "name": "view-checkout",
+      "covers": ["GET /bkash/checkout"],
+      "request": { "method": "GET", "path": "/bkash/checkout?paymentId={{paymentId}}" },
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "verify-success",
+      "covers": ["POST /bkash/checkout"],
+      "request": {
+        "method": "POST",
+        "path": "/bkash/checkout",
+        "form": { "paymentId": "{{paymentId}}", "action": "success" }
+      },
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "execute",
+      "covers": ["POST /v2/tokenized-checkout/payment/execute"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/payment/execute",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": { "paymentId": "{{paymentId}}" }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "paymentId": "{{paymentId}}",
+          "trxId": { "$regex": "^[A-Z0-9]{9}$" },
+          "transactionStatus": "Completed",
+          "amount": "20.00",
+          "currency": "BDT",
+          "intent": "sale",
+          "paymentExecuteTime": { "$any": "string" },
+          "merchantInvoiceNumber": { "$regex": "^INV-PARITY-" },
+          "subMerchantName": "",
+          "payerType": "Customer",
+          "payerReference": "TEST-PARITY",
+          "payerAccount": "01700000000",
+          "maxRefundableAmount": "20.00"
+        }
+      }
+    },
+    {
+      "name": "double-execute",
+      "covers": ["POST /v2/tokenized-checkout/payment/execute"],
+      "request": {
+        "method": "POST",
+        "path": "/v2/tokenized-checkout/payment/execute",
+        "headers": { "authorization": "{{id_token}}", "x-app-key": "sim-app-key" },
+        "json": { "paymentId": "{{paymentId}}" }
+      },
+      "expect": {
+        "status": 200,
+        "shape": {
+          "externalCode": "2062",
+          "internalCode": "payment_already_completed",
+          "errorMessageEn": { "$any": "string" },
+          "errorMessageBn": null
+        }
+      }
+    }
+  ]
+}

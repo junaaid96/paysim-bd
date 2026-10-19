@@ -1,0 +1,1362 @@
+{
+  "gateway": "sslcommerz",
+  "displayName": "SSLCommerz",
+  "version": "v1",
+  "fidelity": "docs-only",
+  "docSources": [
+    "https://developer.sslcommerz.com/doc/v4/",
+    "https://github.com/sslcommerz/SSLCommerz-PHP"
+  ],
+  "sandboxHosts": ["sandbox.sslcommerz.com"],
+  "productionHosts": [
+    "securepay.sslcommerz.com",
+    "seamless-epay.sslcommerz.com",
+    "merchant.sslcommerz.com",
+    "signup.sslcommerz.com"
+  ],
+  "contentTypes": ["application/json", "application/x-www-form-urlencoded"],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/gwprocess/v4/api.php",
+      "purpose": "Session init (hosted checkout)",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.sslcommerz.com/doc/v4/",
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/config/config.php"
+      ],
+      "notes": "Real API also accepts multipart/form-data (official PHP lib posts arrays); simulator accepts JSON + urlencoded only for now."
+    },
+    {
+      "method": "GET",
+      "path": "/validator/api/validationserverAPI.php",
+      "purpose": "Order Validation by val_id",
+      "implemented": true,
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.sslcommerz.com/doc/v4/",
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/lib/SslCommerzNotification.php"
+      ],
+      "notes": "format=json only; format=xml is rejected (XML serialization not implemented)."
+    },
+    {
+      "method": "GET",
+      "path": "/gwprocess/v4/gw.php",
+      "purpose": "Mock hosted payment page (Success/Fail/Cancel buttons)",
+      "implemented": true,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Path + SESSIONKEY param verified from the init response example (gw.php?Q=PAY&SESSIONKEY=...). Page content is simulator-owned with a SIMULATOR banner."
+    },
+    {
+      "method": "POST",
+      "path": "/gwprocess/v4/gw.php",
+      "purpose": "Mock hosted page button actions (simulator-owned)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "No real equivalent; drives the simulated outcome. Not a fidelity claim."
+    },
+    {
+      "method": "GET",
+      "path": "/validator/api/merchantTransIDvalidationAPI.php",
+      "purpose": "Query by sessionkey/tran_id; refund initiate + refund status",
+      "implemented": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Documented officially. Planned for a later phase."
+    },
+    {
+      "method": "POST",
+      "path": "/validator/api/validationserverAPI.php?wsdl",
+      "purpose": "SOAP order validation",
+      "implemented": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/docs.html"],
+      "notes": "Legacy SOAP; no plans to implement unless requested."
+    },
+    {
+      "method": "POST",
+      "path": "/gwprocess/v4/invoice.php",
+      "purpose": "Invoice API",
+      "implemented": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/invoice.html"],
+      "notes": "Out of scope for the checkout simulator."
+    }
+  ],
+  "fields": [
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "store_id",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "store_passwd",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "total_amount",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "decimal(10,2), documented range 10.00-500000.00 BDT; range enforced, enforcement behavior unverified"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "currency",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "3-letter; real gateway converts non-BDT, simulator does not convert (documented simplification)"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "tran_id",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Documented unique; duplicates rejected with FAILED (rejection behavior unverified)"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "product_category",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "success_url",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "fail_url",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cancel_url",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ipn_url",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "'Important! Not mandatory'"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "multi_card_name",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Accepted, ignored (mock page has no channel list)"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "emi_option",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Mandatory-if-EMI per doc; accepted, ignored"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "emi_max_inst_option",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "emi_selected_inst",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_name",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_email",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_add1",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_add2",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_city",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_state",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_postcode",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_country",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_phone",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cus_fax",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_name",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_add1",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_add2",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_city",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_state",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_postcode",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "ship_country",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "value_a",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Echoed back in IPN/validation"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "value_b",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Echoed back in IPN/validation"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "value_c",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Echoed back in IPN/validation"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "value_d",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Echoed back in IPN/validation"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "cart",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "product_amount",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "vat",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "discount_amount",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "convenience_fee",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "*",
+      "location": "request",
+      "required": false,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Unknown fields accepted via passthrough and stored; individual semantics unverified"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "status",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "SUCCESS | FAILED"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "failedreason",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Field verified; message texts are simulator-authored (unverified)"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "sessionkey",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "32-hex-uppercase by example; generation unverified"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "gw",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Category keys + comma-separated gateway codes echoed from the doc example"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "GatewayPageURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Points at the simulator mock page (/gwprocess/v4/gw.php?Q=PAY&SESSIONKEY=...)"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "redirectGatewayURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Field verified; value adapted to the simulator mock page"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "directPaymentURLBank",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty: direct-pay not simulated"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "directPaymentURLCard",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty: direct-pay not simulated"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "directPaymentURL",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty: direct-pay not simulated"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "redirectGatewayURLFailed",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty in the doc example too"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "storeBanner",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty: no trademarked assets shipped"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "storeLogo",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty: no trademarked assets shipped"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "desc",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Array shape verified; logos empty, redirectGatewayURLs point at the mock page"
+    },
+    {
+      "endpoint": "POST /gwprocess/v4/api.php",
+      "name": "is_direct_pay_enable",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always '0': direct-pay not simulated"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "val_id",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "store_id",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "store_passwd",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "format",
+      "location": "request",
+      "required": false,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "json supported; xml rejected by the simulator"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "v",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/lib/SslCommerzNotification.php"
+      ],
+      "notes": "Seen as v=1 in the official lib; accepted and ignored"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "status",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.sslcommerz.com/doc/v4/",
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/lib/SslCommerzNotification.php"
+      ],
+      "notes": "VALID on first check, VALIDATED afterwards (transition rule unverified); INVALID_TRANSACTION for unknown val_id (value unverified)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "tran_date",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Format YYYY-MM-DD HH:MM:SS; timezone unverified (simulator uses UTC)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "tran_id",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "val_id",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "26-char alnum shape by example; generation unverified"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "amount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "store_amount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Simulator deducts no commission (store_amount = amount); real rate is per-store and unverifiable"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "currency",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "bank_tran_id",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "26-char alnum shape by example; generation unverified"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_type",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Value is a simulator fixture (VISA-TestBank)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_no",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Masked fixture mirroring the doc test card 4111111111111111"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_issuer",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Value is a simulator fixture"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_brand",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "VISA fixture"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_issuer_country",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Bangladesh fixture"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "card_issuer_country_code",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "BD fixture"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "currency_type",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "currency_amount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "currency_rate",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 1.0000 (no conversion)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "base_fair",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0.00 (sic: doc spells it base_fair)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "value_a",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "value_b",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "value_c",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "value_d",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "emi_instalment",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0 (sic: doc spells it instalment)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "emi_amount",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0.00"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "emi_description",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always empty"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "emi_issuer",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always empty"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "account_details",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always empty"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "risk_title",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always Safe"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "risk_level",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "APIConnect",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always DONE on success"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "validated_on",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Set on first validation; UTC (tz unverified)"
+    },
+    {
+      "endpoint": "GET /validator/api/validationserverAPI.php",
+      "name": "gw_version",
+      "location": "response",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always empty"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "status",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.sslcommerz.com/doc/v4/",
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/ipn.php"
+      ],
+      "notes": "VALID | FAILED | CANCELLED | EXPIRED | UNATTEMPTED; simulator sends VALID | FAILED | CANCELLED"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "tran_date",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "tran_id",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "val_id",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Empty unless status is VALID"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "amount",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "store_amount",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "No commission deducted (see validation notes)"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_type",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Simulator fixture"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_no",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Masked fixture"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "currency",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "bank_tran_id",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_issuer",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Simulator fixture"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_brand",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_issuer_country",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "card_issuer_country_code",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "currency_type",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "currency_amount",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "currency_rate",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 1.0000"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "base_fair",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0.00"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "store_id",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "value_a",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "value_b",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "value_c",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "value_d",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "verify_sign",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": [
+        "https://developer.sslcommerz.com/doc/v4/",
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/lib/SslCommerzNotification.php"
+      ]
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "verify_key",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Exact documented set, in documented order"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "risk_level",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always 0"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "risk_title",
+      "location": "ipn",
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Always Safe"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "cus_*",
+      "location": "ipn",
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Init cus_* values echoed (cus_fax seen in the doc example)"
+    },
+    {
+      "endpoint": "POST {ipn_url}",
+      "name": "ship_*",
+      "location": "ipn",
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Init ship_* values echoed (by analogy with cus_* echo)"
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "amount",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "currency",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "tran_date",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "card_issuer",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "bank_tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ]
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "val_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/success.php"
+      ],
+      "notes": "Required: success.php passes $_POST to orderValidate which reads val_id"
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "status",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent as VALID for consistency with IPN; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "verify_sign",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {success_url}",
+      "name": "verify_key",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ]
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "status",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ],
+      "notes": "Sent as FAILED"
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "error",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ],
+      "notes": "Field verified; message text simulator-authored"
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "card_issuer",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ]
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "bank_tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ]
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "amount",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ]
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "currency",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/fail.php"
+      ]
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "verify_sign",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {fail_url}",
+      "name": "verify_key",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ]
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "status",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ],
+      "notes": "Sent as CANCELLED"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "error",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ],
+      "notes": "Field verified; message text simulator-authored"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "amount",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ]
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "currency",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ]
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "tran_date",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ],
+      "notes": "Read in the already-Processing branch"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "card_issuer",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ],
+      "notes": "Read in the already-Processing branch"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "bank_tran_id",
+      "location": "callback",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/pg_redirection/cancel.php"
+      ],
+      "notes": "Read in the already-Processing branch"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "verify_sign",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "POST {cancel_url}",
+      "name": "verify_key",
+      "location": "callback",
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Sent so merchants can verify; presence in real callbacks unstated"
+    },
+    {
+      "endpoint": "GET /gwprocess/v4/gw.php",
+      "name": "SESSIONKEY",
+      "location": "request",
+      "required": true,
+      "fidelity": "verified",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Uppercase in the doc example; lowercase sessionkey also accepted"
+    },
+    {
+      "endpoint": "GET /gwprocess/v4/gw.php",
+      "name": "Q",
+      "location": "request",
+      "required": false,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.sslcommerz.com/doc/v4/"],
+      "notes": "Seen as Q=PAY in the example; accepted and ignored"
+    }
+  ],
+  "hashRules": [
+    {
+      "name": "verify_sign",
+      "description": "MD5 over ksort(verify_key fields + md5(store_passwd)), joined as key=value with &",
+      "fidelity": "verified",
+      "sources": [
+        "https://raw.githubusercontent.com/sslcommerz/SSLCommerz-PHP/master/lib/SslCommerzNotification.php"
+      ],
+      "steps": [
+        "Split verify_key on commas",
+        "Take values present in the payload (missing keys skipped)",
+        "Add store_passwd = md5(store password)",
+        "Sort keys byte-wise (PHP ksort; identical to JS sort for ASCII keys)",
+        "Join as key=value pairs with & (no trailing &)",
+        "Compare md5 of the string with verify_sign (strict equality; the PHP lib uses loose ==)"
+      ]
+    }
+  ],
+  "notes": [
+    "Callback transport: the doc says the user 'will redirect' to success/fail/cancel URLs while the official samples read $_POST; the simulator bridges this with an auto-submitting POST form. Mechanism docs-only.",
+    "The doc's IPN example verify_sign (8070c0...) could not be reproduced: the real testbox password is unpublished, so it is an illustration, not a test vector.",
+    "All datetimes are UTC; the real gateway timezone is unstated.",
+    "val_id/bank_tran_id/sessionkey generations are shape-by-example only."
+  ]
+}
