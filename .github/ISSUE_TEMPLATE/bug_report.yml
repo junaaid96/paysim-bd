@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in PaySim BD behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thanks for reporting. Please do **not** use this form for security
+        vulnerabilities — see [SECURITY.md](../../SECURITY.md). Never paste real
+        gateway credentials.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start PaySim BD with ...
+        2. Send ... to ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual behavior
+      placeholder: I expected X, but Y happened.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant API log lines
+      render: text
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: |
+        - PaySim BD commit:
+        - Run mode: Docker / source / hosted playground
+        - Node version:
+        - Gateway: SSLCommerz / bKash / Nagad
