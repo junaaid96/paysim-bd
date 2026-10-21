@@ -44,48 +44,50 @@ body {
   @apply bg-zinc-950 font-sans text-zinc-100 antialiased;
 }
 
-.card {
-  @apply rounded-xl border border-zinc-800 bg-zinc-900 shadow-sm;
-}
-
-.btn {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50;
-}
-
-.btn-primary {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-black transition hover:bg-emerald-400 disabled:opacity-50;
-}
-
-.input {
-  @apply mt-1 block w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-200 outline-none focus:border-emerald-500;
-}
-
-.eyebrow {
-  @apply text-xs font-semibold tracking-wider text-zinc-500 uppercase;
-}
-
-@keyframes ping-soft {
-  75%,
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
+@layer components {
+  .card {
+    @apply rounded-xl border border-zinc-800 bg-zinc-900 shadow-sm;
   }
-}
 
-.live-dot {
-  @apply relative inline-flex h-2 w-2 rounded-full bg-emerald-400;
-}
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50;
+  }
 
-.live-dot::after {
-  content: '';
-  @apply absolute inset-0 rounded-full bg-emerald-400;
-  animation: ping-soft 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-black transition hover:bg-emerald-400 disabled:opacity-50;
+  }
 
-html.light {
-  --color-pink-300: oklch(0.52 0.2 0);
-  --color-pink-950: oklch(0.95 0.03 350);
-  --color-orange-300: oklch(0.55 0.17 47);
-  --color-orange-950: oklch(0.95 0.04 70);
-  --color-violet-400: oklch(0.6 0.2 293);
+  .input {
+    @apply mt-1 block w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-200 outline-none focus:border-emerald-500;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold tracking-wider text-zinc-500 uppercase;
+  }
+
+  @keyframes ping-soft {
+    75%,
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+
+  .live-dot {
+    @apply relative inline-flex h-2 w-2 rounded-full bg-emerald-400;
+  }
+
+  .live-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-emerald-400;
+    animation: ping-soft 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  html.light {
+    --color-pink-300: oklch(0.52 0.2 0);
+    --color-pink-950: oklch(0.95 0.03 350);
+    --color-orange-300: oklch(0.55 0.17 47);
+    --color-orange-950: oklch(0.95 0.04 70);
+    --color-violet-400: oklch(0.6 0.2 293);
+  }
 }

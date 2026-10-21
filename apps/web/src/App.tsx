@@ -299,7 +299,7 @@ function TxnTable({
           <thead className="border-b border-zinc-800 text-xs text-zinc-500">
             <tr>
               <th className="px-4 py-2.5 font-medium">Reference</th>
-              <th className="px-4 py-2.5 font-medium">Gateway</th>
+              <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Gateway</th>
               <th className="px-4 py-2.5 text-right font-medium">Amount</th>
               <th className="px-4 py-2.5 font-medium">State</th>
               {!compact && <th className="px-4 py-2.5 font-medium">Created</th>}
@@ -317,7 +317,7 @@ function TxnTable({
                 <td className="max-w-[16rem] truncate px-4 py-2.5">
                   <code className="text-zinc-200">{txnReference(txn)}</code>
                 </td>
-                <td className="px-4 py-2.5">
+                <td className="hidden px-4 py-2.5 sm:table-cell">
                   <span className="inline-flex items-center gap-2 text-zinc-300">
                     <GatewayMark gateway={txn.gateway} size="sm" />
                     {gatewayName(txn.gateway)}
