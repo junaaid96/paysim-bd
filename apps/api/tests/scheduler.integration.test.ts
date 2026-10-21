@@ -259,6 +259,45 @@ maybe('scheduler integration', () => {
     expect(receiver.posts).toHaveLength(1);
   });
 
+  it('drainUntil runs jobs that come due shortly after a response (serverless)', async () => {
+    const receiver = await startReceiver();
+    receivers.push(receiver);
+    const txn = await host.seedTxn({ ipnUrl: receiver.url });
+    const resolved = await host.ctx.engine.resolveForInit({
+      workspaceId: host.workspace.id,
+      gateway: 'sslcommerz',
+      defaultScenarioId: null,
+      magicName: 'immediate-success',
+    });
+    // Due in 300ms, inserted without a kick: no timer is armed anywhere,
+    // like a frozen serverless instance.
+    await host.db.insert(jobs).values({
+      workspaceId: host.workspace.id,
+      transactionId: txn.id,
+      type: 'scenario-step',
+      payload: {
+        txnId: txn.id,
+        scenarioId: resolved.scenarioId,
+        scenarioName: resolved.definition.name,
+        source: resolved.source,
+        stepIndex: 0,
+        steps: resolved.definition.steps,
+      },
+      runAt: new Date(Date.now() + 300),
+    });
+    const fresh = new Scheduler({
+      db: host.db,
+      ctx: host.ctx,
+      logger: host.engineDeps.logger,
+      plugins: host.plugins,
+      runRetry: (input) => runScheduledRetry(host.deliverDeps, input),
+    });
+    await fresh.drainUntil(Date.now() + 5_000);
+    fresh.stop();
+    expect(await txnState(host, txn.id)).toBe('valid');
+    expect(receiver.posts).toHaveLength(1);
+  });
+
   it('retries failed deliveries with backoff, then gives up loudly', async () => {
     const txn = await host.seedTxn({ ipnUrl: 'http://127.0.0.1:1/dead' });
     await attachBuiltin(txn.id, 'immediate-success');

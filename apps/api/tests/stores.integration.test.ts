@@ -34,7 +34,7 @@ maybe('drizzle stores integration', () => {
     await waitForDb(db, { maxElapsedMs: 20_000 });
     await runMigrations(db);
     await db.execute(
-      sql`TRUNCATE workspaces, scenarios, gateway_apps, transactions, events, callback_deliveries, clock_state, recordings, jobs`,
+      sql`TRUNCATE workspaces, scenarios, gateway_apps, transactions, events, callback_deliveries, clock_state, recordings, jobs, kv_entries`,
     );
     blobRoot = await mkdtemp(join(tmpdir(), 'paysim-stores-'));
     const bus = new EventBus();
@@ -136,6 +136,46 @@ maybe('drizzle stores integration', () => {
     });
     expect(small.requestBody).toBe('a=b');
     expect(small.requestBodyKey).toBeNull();
+  });
+
+  it('spills large event payloads (e.g. huge inbound bodies) to object storage', async () => {
+    const workspace = await ensureDefaultWorkspace(db);
+    const [app] = await queries.listApps('local-default');
+    if (!app) throw new Error('expected seeded app');
+    const txn = await stores.createTransaction({
+      workspaceId: workspace.id,
+      gatewayAppId: app.id,
+      gateway: 'sslcommerz',
+      state: 'initiated',
+      amountMinor: 100,
+      currency: 'BDT',
+    });
+    const event = await stores.recordEvent({
+      workspaceId: workspace.id,
+      transactionId: txn.id,
+      type: 'sslcommerz.init.received',
+      data: { body: { value_a: 'y'.repeat(20_000) } },
+    });
+    expect(event.data['spilled']).toBe(true);
+    expect(String(event.data['bodyKey'])).toMatch(/^event-bodies\//);
+    const small = await stores.recordEvent({
+      workspaceId: workspace.id,
+      transactionId: txn.id,
+      type: 'note',
+      data: { a: 1 },
+    });
+    expect(small.data).toEqual({ a: 1 });
+  });
+
+  it('shares kv entries and hides expired ones', async () => {
+    const kv = stores.kv;
+    if (!kv) throw new Error('expected kv');
+    await kv.set('t', 'k', { v: 1 }, new Date(Date.now() + 60_000));
+    expect(await kv.get('t', 'k')).toEqual({ v: 1 });
+    await kv.set('t', 'old', { v: 2 }, new Date(Date.now() - 1));
+    expect(await kv.get('t', 'old')).toBeNull();
+    await kv.delete('t', 'k');
+    expect(await kv.get('t', 'k')).toBeNull();
   });
 
   it('assigns per-transaction attempt numbers and lists deliveries in order', async () => {

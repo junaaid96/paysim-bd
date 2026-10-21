@@ -123,7 +123,7 @@ function tokenError(): Record<string, unknown> {
 
 export function createBkashRouter(
   ctx: PluginContext,
-  tokens: TokenStore = createTokenStore(),
+  tokens: TokenStore = createTokenStore(ctx.stores.kv),
 ): Router {
   const router = Router();
 
@@ -131,10 +131,10 @@ export function createBkashRouter(
   async function authenticate(req: Request, res: Response): Promise<AppRecord | null> {
     const raw = asString(firstHeader(req, 'authorization'));
     const token = raw.toLowerCase().startsWith('bearer ') ? raw.slice(7).trim() : raw.trim();
-    const peeked = token ? tokens.peek(token) : null;
+    const peeked = token ? await tokens.peek(token) : null;
     const app = peeked ? await ctx.stores.getApp(peeked) : null;
     const nowMs = app ? ctx.clock.now(app.workspaceId).getTime() : 0;
-    if (!app || !token || tokens.resolve(token, nowMs) !== app.id) {
+    if (!app || !token || (await tokens.resolve(token, nowMs)) !== app.id) {
       res.status(200).json(tokenError());
       return null;
     }
@@ -166,7 +166,7 @@ export function createBkashRouter(
       res.status(200).json(buildGrantError('9999', GRANT_FAIL_MESSAGE));
       return;
     }
-    const issued = tokens.issue(app.id, ctx.clock.now(app.workspaceId).getTime());
+    const issued = await tokens.issue(app.id, ctx.clock.now(app.workspaceId).getTime());
     ctx.logger.info('bkash token granted', { app: app.id });
     res.status(200).json(buildGrantResponse(issued));
   });
@@ -192,7 +192,7 @@ export function createBkashRouter(
       res.status(200).json(buildGrantError('9999', GRANT_FAIL_MESSAGE));
       return;
     }
-    const rotated = tokens.refresh(
+    const rotated = await tokens.refresh(
       app.id,
       parsed.data.refresh_token,
       ctx.clock.now(app.workspaceId).getTime(),

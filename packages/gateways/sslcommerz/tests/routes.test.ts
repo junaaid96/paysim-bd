@@ -1,7 +1,10 @@
+import { createHash } from 'node:crypto';
+
 import express from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { AUTO_SUBMIT_SCRIPT } from '../src/pages.js';
 import { createSslcommerzRouter } from '../src/routes.js';
 import { verifySignature } from '../src/verify.js';
 import { makeCtx, type FakeContext } from './fakes.js';
@@ -110,6 +113,12 @@ describe('sslcommerz routes', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('http://client.test/pay/success');
     expect(res.text).toContain('name="tran_id"');
+    // The return page must be allowed to auto-POST to the merchant's URL.
+    const csp = String(res.headers['content-security-policy']);
+    expect(csp).toContain('form-action http: https:');
+    const hash = createHash('sha256').update(AUTO_SUBMIT_SCRIPT).digest('base64');
+    expect(csp).toContain(`'sha256-${hash}'`);
+    expect(res.text).toContain(`<script>${AUTO_SUBMIT_SCRIPT}</script>`);
 
     expect(fakes.delivered).toHaveLength(1);
     const ipn = fakes.delivered[0];

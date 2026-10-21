@@ -25,7 +25,7 @@ import {
   generateSessionKey,
 } from './builders.js';
 import { completeCheckout } from './checkout.js';
-import { autoPostForm, checkoutPage, errorPage } from './pages.js';
+import { autoPostCsp, autoPostForm, checkoutPage, errorPage } from './pages.js';
 import { CHECKOUT_ACTIONS, type CheckoutAction } from './state-machine.js';
 import { asString, firstQueryParam, headersToRecord } from './util.js';
 
@@ -362,6 +362,7 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       type: 'sslcommerz.callback.rendered',
       data: { kind, targetUrl, payload: redactValue(callbackPayload) },
     });
+    res.setHeader('Content-Security-Policy', autoPostCsp());
     res.status(200).send(autoPostForm(targetUrl, callbackPayload));
   });
 

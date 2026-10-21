@@ -67,6 +67,8 @@ describe('apps routes', () => {
 
     const list = await request(app).get('/api/apps?workspace=local-default');
     expect(list.body).toHaveLength(1);
+    // Secrets are redacted on read; identifiers stay visible.
+    expect(list.body[0].credentials).toEqual({ store_id: 'testbox', store_passwd: '[REDACTED]' });
   });
 
   it('rejects duplicates, production refs, bad shapes and unknown gateways', async () => {

@@ -4,9 +4,11 @@
 // /api/* request is rewritten here and handled by the same boot sequence as
 // `pnpm dev` and Docker (built into apps/api/dist by `pnpm build`).
 //
-// Serverless caveat: in-process scheduler timers only run while the function
-// is warm, so scenario steps and delivery retries fire on invocation (cold
-// starts process anything overdue) rather than precisely on time.
+// Scheduling on serverless: in-process timers die when the function is
+// frozen, so every request first runs overdue jobs (evaluate-on-read), and
+// after the response the function stays alive via waitUntil to run jobs due
+// within DRAIN_WINDOW_MS (scenario steps, IPN retries) on time.
+import { waitUntil } from '@vercel/functions';
 import { bootApp } from '../apps/api/dist/boot.js';
 import { loadEnv } from '../apps/api/dist/env.js';
 import { createLogger } from '../apps/api/dist/logger.js';
@@ -14,6 +16,9 @@ import { FsStorageDriver } from '../apps/api/dist/storage/fs.js';
 import { createStorageFromEnv } from '../apps/api/dist/storage/index.js';
 
 let appPromise;
+
+/** Keep draining jobs due this soon after a response (< maxDuration 60s). */
+const DRAIN_WINDOW_MS = 45_000;
 
 function createStorage(env, logger) {
   if (env.STORAGE_DRIVER === 's3') return createStorageFromEnv(env);
@@ -33,14 +38,14 @@ async function init() {
     process.env.VERCEL_URL ??
     ''
   ).trim();
-  const { app } = await bootApp({
+  const booted = await bootApp({
     env,
     logger,
     storage: createStorage(env, logger),
     poolMax: Math.min(env.DB_POOL_MAX, 3),
     simBaseUrl: vercelUrl ? `https://${vercelUrl}` : undefined,
   });
-  return app;
+  return booted;
 }
 
 export default async function handler(req, res) {
@@ -49,7 +54,16 @@ export default async function handler(req, res) {
     throw err;
   });
   try {
-    const app = await appPromise;
+    const { app, scheduler } = await appPromise;
+    // Catch up anything that came due while no instance was running.
+    await scheduler.runDueNow().catch((err) => console.error('catch-up failed', err?.message));
+    res.on('finish', () => {
+      waitUntil(
+        scheduler
+          .drainUntil(Date.now() + DRAIN_WINDOW_MS)
+          .catch((err) => console.error('drain failed', err?.message)),
+      );
+    });
     return app(req, res);
   } catch (err) {
     console.error(err instanceof Error ? err.message : err);

@@ -228,3 +228,21 @@ export const recordings = pgTable('recordings', {
   createdAt: createdAt(),
 });
 export type Recording = typeof recordings.$inferSelect;
+
+/**
+ * Small cross-instance key/value state for plugins (e.g. bKash auth
+ * tokens), so serverless instances share it. Rows past expires_at are
+ * ignored on read and pruned opportunistically.
+ */
+export const kvEntries = pgTable(
+  'kv_entries',
+  {
+    namespace: text('namespace').notNull(),
+    key: text('key').notNull(),
+    value: jsonb('value').$type<Record<string, unknown>>().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('kv_entries_ns_key_idx').on(t.namespace, t.key)],
+);
+export type KvEntry = typeof kvEntries.$inferSelect;

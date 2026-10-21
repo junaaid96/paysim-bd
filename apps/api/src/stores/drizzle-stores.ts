@@ -1,15 +1,17 @@
 // Drizzle implementation of PluginStores plus dashboard read queries.
 // Every write publishes to the SSE bus so the dashboard updates live.
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, sql } from 'drizzle-orm';
 
 import {
   MAX_RESPONSE_SNIPPET_BYTES,
+  redactValue,
   truncateUtf8,
   type AppRecord,
   type CreateTxnInput,
   type DeliveryRecord,
   type EventRecord,
+  type KeyValueStore,
   type PluginStores,
   type RecordDeliveryInput,
   type RecordEventInput,
@@ -22,6 +24,7 @@ import {
   callbackDeliveries,
   events,
   gatewayApps,
+  kvEntries,
   transactions,
   workspaces,
   type CallbackDelivery,
@@ -133,6 +136,51 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
     return { inline: truncateUtf8(body, MAX_RESPONSE_SNIPPET_BYTES), key: stored.key };
   }
 
+  /**
+   * Event payloads >16 KB (e.g. a huge inbound init body) spill to object
+   * storage like callback bodies; the row keeps a redacted preview + key.
+   */
+  async function eventData(input: RecordEventInput): Promise<Record<string, unknown>> {
+    const data = input.data ?? {};
+    const stored = await storeBody(storage, 'event-bodies', data);
+    if (stored.inline !== null) return data;
+    return {
+      spilled: true,
+      bodyKey: stored.key,
+      sizeBytes: stored.sizeBytes,
+      preview: truncateUtf8(JSON.stringify(redactValue(data)), MAX_RESPONSE_SNIPPET_BYTES),
+    };
+  }
+
+  const kv: KeyValueStore = {
+    async get(namespace, key) {
+      const rows = await db
+        .select()
+        .from(kvEntries)
+        .where(and(eq(kvEntries.namespace, namespace), eq(kvEntries.key, key)))
+        .limit(1);
+      const row = rows[0];
+      if (!row || row.expiresAt.getTime() <= Date.now()) return null;
+      return row.value;
+    },
+    async set(namespace, key, value, expiresAt) {
+      await db
+        .insert(kvEntries)
+        .values({ namespace, key, value, expiresAt })
+        .onConflictDoUpdate({
+          target: [kvEntries.namespace, kvEntries.key],
+          set: { value, expiresAt },
+        });
+      // Opportunistic pruning keeps the table small without a cron.
+      await db.delete(kvEntries).where(lt(kvEntries.expiresAt, new Date()));
+    },
+    async delete(namespace, key) {
+      await db
+        .delete(kvEntries)
+        .where(and(eq(kvEntries.namespace, namespace), eq(kvEntries.key, key)));
+    },
+  };
+
   async function insertEvent(input: RecordEventInput): Promise<EventRecord> {
     const rows = await db
       .insert(events)
@@ -140,7 +188,7 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
         workspaceId: input.workspaceId,
         transactionId: input.transactionId,
         type: input.type,
-        data: input.data ?? {},
+        data: await eventData(input),
       })
       .returning();
     const row = rows[0];
@@ -152,6 +200,8 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
   }
 
   return {
+    kv,
+
     async findAppByStoreId(gateway: string, field: string, value: string) {
       const rows = await db.select().from(gatewayApps).where(eq(gatewayApps.gateway, gateway));
       const row = rows.find((candidate) => candidate.credentials[field] === value);

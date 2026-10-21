@@ -178,7 +178,25 @@ export interface RecordDeliveryInput {
   sentAt?: Date;
 }
 
+/**
+ * Small shared key/value store for plugin state that must survive across
+ * processes (serverless instances), e.g. issued gateway auth tokens.
+ * Entries past `expiresAt` are treated as absent.
+ */
+export interface KeyValueStore {
+  get(namespace: string, key: string): Promise<Record<string, unknown> | null>;
+  set(
+    namespace: string,
+    key: string,
+    value: Record<string, unknown>,
+    expiresAt: Date,
+  ): Promise<void>;
+  delete(namespace: string, key: string): Promise<void>;
+}
+
 export interface PluginStores {
+  /** Cross-instance key/value state. Optional: plugins fall back to memory. */
+  kv?: KeyValueStore;
   findAppByStoreId(gateway: string, field: string, value: string): Promise<AppRecord | null>;
   getApp(id: string): Promise<AppRecord | null>;
   createTransaction(input: CreateTxnInput): Promise<TxnRecord>;
