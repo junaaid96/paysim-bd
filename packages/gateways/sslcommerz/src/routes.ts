@@ -135,7 +135,7 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       res.status(200).json(buildInitFailure('Invalid store credentials'));
       return;
     }
-    const duplicate = await ctx.stores.findTransactionByGatewayTxnId(GATEWAY, init.tran_id);
+    const duplicate = await ctx.stores.findTransactionByGatewayTxnId(GATEWAY, init.tran_id, app.id);
     if (duplicate) {
       res.status(200).json(buildInitFailure('Duplicate tran_id'));
       return;

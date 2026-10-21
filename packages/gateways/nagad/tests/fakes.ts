@@ -125,9 +125,15 @@ export class FakeStores implements PluginStores {
   async findTransactionByGatewayTxnId(
     gateway: string,
     gatewayTxnId: string,
+    gatewayAppId?: string,
   ): Promise<TxnRecord | null> {
     return (
-      this.txns.find((txn) => txn.gateway === gateway && txn.gatewayTxnId === gatewayTxnId) ?? null
+      this.txns.find(
+        (txn) =>
+          txn.gateway === gateway &&
+          txn.gatewayTxnId === gatewayTxnId &&
+          (gatewayAppId === undefined || txn.gatewayAppId === gatewayAppId),
+      ) ?? null
     );
   }
 
