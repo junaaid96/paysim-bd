@@ -7,7 +7,7 @@ import { DEFAULT_WORKSPACE_KEY } from '@paysim/core';
 import { nonEmpty, type Env } from '../env.js';
 import { activityQuery, dbNameFromUrl } from '../live-queries.js';
 import type { Queries } from '../stores/drizzle-stores.js';
-import { sendError, zodIssues } from './http.js';
+import { isWellFormedWorkspaceKey, sendError, zodIssues } from './http.js';
 
 export interface LiveDeps {
   env: Env;
@@ -50,9 +50,11 @@ export function createLiveRouter(deps: LiveDeps): Router {
       sendError(res, 400, 'invalid_request', { issues: zodIssues(parsed.error) });
       return;
     }
-    const workspace = await deps.queries.getWorkspaceByKey(parsed.data.workspaceKey);
-    if (!workspace) {
-      sendError(res, 404, 'unknown_workspace');
+    const workspaceKey = parsed.data.workspaceKey;
+    // Unknown but well-formed keys are brand-new, empty workspaces: the
+    // activity query joins on the key, so it is sealed and returns no rows.
+    if (!isWellFormedWorkspaceKey(workspaceKey)) {
+      sendError(res, 400, 'invalid_workspace');
       return;
     }
     const realtime = server();
@@ -62,7 +64,7 @@ export function createLiveRouter(deps: LiveDeps): Router {
       });
       return;
     }
-    res.json({ sealed: await realtime.seal({ query: activityQuery(workspace.key) }) });
+    res.json({ sealed: await realtime.seal({ query: activityQuery(workspaceKey) }) });
   });
 
   return router;

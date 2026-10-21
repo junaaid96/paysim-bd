@@ -4,7 +4,7 @@ import { DEFAULT_WORKSPACE_KEY } from '@paysim/core';
 
 import type { EventBus } from '../events/bus.js';
 import type { Queries } from '../stores/drizzle-stores.js';
-import { sendError } from './http.js';
+import { isWellFormedWorkspaceKey, sendError } from './http.js';
 
 export interface StreamDeps {
   bus: EventBus;
@@ -17,9 +17,10 @@ export function createStreamRouter(deps: StreamDeps): Router {
   router.get('/stream', async (req: Request, res: Response) => {
     const workspaceKey =
       typeof req.query['workspace'] === 'string' ? req.query['workspace'] : DEFAULT_WORKSPACE_KEY;
-    const workspace = await deps.queries.getWorkspaceByKey(workspaceKey);
-    if (!workspace) {
-      sendError(res, 404, 'unknown_workspace');
+    // A brand-new workspace has no row until its first gateway app exists;
+    // its stream must still connect (and stay quiet) so the dashboard is live.
+    if (!isWellFormedWorkspaceKey(workspaceKey)) {
+      sendError(res, 400, 'invalid_workspace');
       return;
     }
     res.writeHead(200, {

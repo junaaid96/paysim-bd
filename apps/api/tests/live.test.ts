@@ -68,9 +68,20 @@ describe('live routes', () => {
     expect(res.body).toMatchObject({ error: 'realtime_not_configured' });
   });
 
-  it('answers 404 for an unknown workspace', async () => {
-    const res = await request(sealed).post('/api/live/activity').send({ workspaceKey: 'nope' });
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ error: 'unknown_workspace' });
+  it('seals an empty feed for a brand-new (unknown) workspace', async () => {
+    const res = await request(sealed)
+      .post('/api/live/activity')
+      .send({ workspaceKey: 'brand-new-ws' });
+    expect(res.status).toBe(200);
+    const body = res.body as { sealed: Record<string, unknown> };
+    expect(typeof body.sealed['capability']).toBe('string');
+  });
+
+  it('rejects a malformed workspace key', async () => {
+    const res = await request(sealed)
+      .post('/api/live/activity')
+      .send({ workspaceKey: "x'; drop table--" });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ error: 'invalid_workspace' });
   });
 });
