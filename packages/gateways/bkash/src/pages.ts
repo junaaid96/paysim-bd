@@ -25,7 +25,7 @@ function shell(title: string, inner: string): string {
 <div class="shell">
 ${inner}
 </div>
-<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider · by CodeJBorg</div>
+<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider</div>
 </body>
 </html>`;
 }
@@ -82,7 +82,7 @@ export function redirectPage(input: RedirectPageInput): string {
 <p>Continuing to the merchant…</p>
 <p><a id="continue" href="${escapeHtml(safeHttpUrl(input.targetUrl))}">Continue to merchant</a></p>
 </div>
-<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider · by CodeJBorg</div>
+<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider</div>
 </body>
 </html>`;
 }

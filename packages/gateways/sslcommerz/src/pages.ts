@@ -33,7 +33,7 @@ function shell(title: string, body: string): string {
     `<meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title>` +
     `<style>${STYLE}</style></head><body>` +
     `${BANNER}<main class="shell">${body}</main>` +
-    '<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider · by CodeJBorg</div>' +
+    '<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider</div>' +
     '</body></html>'
   );
 }
