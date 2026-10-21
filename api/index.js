@@ -19,6 +19,10 @@ let appPromise;
 
 /** Keep draining jobs due this soon after a response (< maxDuration 60s). */
 const DRAIN_WINDOW_MS = 45_000;
+/** Catch-up costs a DB round trip; do it at most this often per instance. */
+const CATCH_UP_EVERY_MS = 5_000;
+let lastCatchUp = 0;
+let draining = false;
 
 function createStorage(env, logger) {
   if (env.STORAGE_DRIVER === 's3') return createStorageFromEnv(env);
@@ -56,12 +60,21 @@ export default async function handler(req, res) {
   try {
     const { app, scheduler } = await appPromise;
     // Catch up anything that came due while no instance was running.
-    await scheduler.runDueNow().catch((err) => console.error('catch-up failed', err?.message));
+    if (Date.now() - lastCatchUp > CATCH_UP_EVERY_MS) {
+      lastCatchUp = Date.now();
+      await scheduler.runDueNow().catch((err) => console.error('catch-up failed', err?.message));
+    }
     res.on('finish', () => {
+      // One drain loop per instance is enough; it re-checks the queue.
+      if (draining) return;
+      draining = true;
       waitUntil(
         scheduler
           .drainUntil(Date.now() + DRAIN_WINDOW_MS)
-          .catch((err) => console.error('drain failed', err?.message)),
+          .catch((err) => console.error('drain failed', err?.message))
+          .finally(() => {
+            draining = false;
+          }),
       );
     });
     return app(req, res);
