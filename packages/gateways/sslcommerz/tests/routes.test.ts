@@ -197,6 +197,16 @@ describe('sslcommerz routes', () => {
     );
     expect(second.body.status).toBe('VALIDATED');
 
+    // Another store's credentials cannot validate this payment.
+    fakes.stores.seedApp({
+      id: 'other-app',
+      credentials: { store_id: 'otherbox', store_passwd: 'other' },
+    });
+    const foreign = await request(app).get(
+      `/validator/api/validationserverAPI.php?val_id=${valId}&store_id=otherbox&store_passwd=other&format=json`,
+    );
+    expect(foreign.body.status).toBe('INVALID_TRANSACTION');
+
     const unknown = await request(app).get(
       '/validator/api/validationserverAPI.php?val_id=nope&store_id=testbox&store_passwd=qwerty&format=json',
     );

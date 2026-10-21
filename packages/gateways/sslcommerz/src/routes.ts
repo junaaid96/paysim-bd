@@ -239,7 +239,8 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       return;
     }
     const txn = await ctx.stores.findTransactionByMetadata(GATEWAY, 'valId', valId);
-    if (!txn || txn.state !== 'valid') {
+    // A store may only validate its own payments (val_ids are not secrets).
+    if (!txn || txn.state !== 'valid' || txn.gatewayAppId !== app.id) {
       res.status(200).json({ status: 'INVALID_TRANSACTION' });
       return;
     }
