@@ -637,11 +637,19 @@ export default function App(): JSX.Element {
             <strong>Simulator</strong> — fake money and fake credentials only. Never use real keys
             or customer data.
           </div>
-          <div className="flex items-center justify-between text-[11px] text-zinc-500">
-            <span>
+          <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-500">
+            <span
+              className="min-w-0 truncate"
+              title={`API ${health.data ? `v${health.data.version}` : '…'} · ${workspace}`}
+            >
               API {health.data ? `v${health.data.version}` : '…'} · {workspace}
             </span>
-            <a href={REPO_URL} target="_blank" rel="noreferrer" className="hover:text-zinc-300">
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 whitespace-nowrap hover:text-zinc-300"
+            >
               GitHub ↗
             </a>
           </div>
