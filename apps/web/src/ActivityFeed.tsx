@@ -88,7 +88,18 @@ function LiveFeed({
   return (
     <div>
       <p className="mt-1 text-xs text-zinc-500">
-        {statusLabel(status)} · streaming from Neon Realtime
+        <span
+          className={
+            status === 'live'
+              ? 'font-semibold text-emerald-400'
+              : status === 'closed'
+                ? 'text-red-400'
+                : 'text-amber-400'
+          }
+        >
+          {statusLabel(status)}
+        </span>{' '}
+        · streaming from Neon Realtime
       </p>
       {data === undefined ? (
         <p className="mt-2 text-sm text-zinc-500">Loading activity…</p>
