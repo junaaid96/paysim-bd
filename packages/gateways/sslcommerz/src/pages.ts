@@ -12,16 +12,26 @@ export function escapeHtml(input: string): string {
 }
 
 const BANNER =
-  '<div style="background:#fbbf24;color:#000;text-align:center;font-weight:bold;padding:8px">' +
+  '<div class="sim">' +
   'SIMULATOR — no real money moves here. Do not enter real card details.' +
   '</div>';
+
+const STYLE =
+  'body{font-family:Inter,system-ui,sans-serif;background:#f4f4f5;color:#18181b;margin:0;padding:0 1rem 2rem}' +
+  '.sim{max-width:560px;margin:1.5rem auto 0;background:repeating-linear-gradient(45deg,#fbbf24 0 12px,#f59e0b 12px 24px);color:#000;padding:.6rem 1rem;font-weight:700;text-align:center;border-radius:12px 12px 0 0;font-size:13px}' +
+  '.shell{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4e7;border-top:4px solid #1d4ed8;border-radius:0 0 14px 14px;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.06)}' +
+  'h1{color:#1d4ed8;margin-top:0;font-size:1.4rem}' +
+  'button{background:#1d4ed8;color:#fff;border:0;border-radius:8px;padding:.65rem 1.2rem;font:inherit;font-weight:600;cursor:pointer}' +
+  'button[value=fail],button[value=cancel]{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}' +
+  '.foot{max-width:560px;margin:1rem auto;text-align:center;font-size:12px;color:#71717a}';
 
 function shell(title: string, body: string): string {
   return (
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     `<meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title>` +
-    '</head><body style="font-family:system-ui,sans-serif;margin:0">' +
-    `${BANNER}<main style="max-width:560px;margin:24px auto;padding:0 16px">${body}</main>` +
+    `<style>${STYLE}</style></head><body>` +
+    `${BANNER}<main class="shell">${body}</main>` +
+    '<div class="foot">PaySim BD sandbox simulator · not affiliated with any payment provider · by CodeJBorg</div>' +
     '</body></html>'
   );
 }
@@ -46,8 +56,7 @@ export function checkoutPage(input: CheckoutPageInput): string {
           (action) =>
             `<form method="POST" style="display:inline;margin-right:8px">` +
             `<input type="hidden" name="SESSIONKEY" value="${escapeHtml(input.sessionkey)}">` +
-            `<button type="submit" name="action" value="${action}" ` +
-            'style="font-size:16px;padding:10px 20px;cursor:pointer">' +
+            `<button type="submit" name="action" value="${action}">` +
             `${action === 'success' ? 'Success' : action === 'fail' ? 'Fail' : 'Cancel'}` +
             '</button></form>',
         )

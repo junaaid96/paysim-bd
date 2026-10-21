@@ -6,28 +6,56 @@ import type { SealedLiveQuery } from '@neon/realtime/client';
 
 import { fetchSealedActivity, fetchTxns, type ActivityRow } from './api';
 import { realtimeClient } from './realtime';
+import { EmptyState, GatewayMark, LiveBadge, StateChip, formatAmount } from './ui';
 
 function formatTime(date: Date): string {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString();
 }
 
 function statusLabel(status: string): string {
-  if (status === 'live') return '● live';
-  if (status === 'connecting') return 'connecting…';
-  if (status === 'stale') return 'updating…';
-  if (status === 'closed') return 'closed';
+  if (status === 'live') return 'Connected';
+  if (status === 'connecting') return 'Connecting…';
+  if (status === 'stale') return 'Updating…';
+  if (status === 'closed') return 'Closed';
   return status;
+}
+
+function FeedRow({
+  time,
+  title,
+  gateway,
+  amount,
+  state,
+}: {
+  time: string;
+  title: string;
+  gateway: string;
+  amount: string;
+  state: string;
+}): JSX.Element {
+  return (
+    <li className="flex items-center gap-3 border-b border-zinc-800 py-2 last:border-0">
+      <GatewayMark gateway={gateway} size="sm" />
+      <div className="min-w-0 flex-1">
+        <code className="block truncate text-xs text-zinc-200">{title}</code>
+        <span className="text-[11px] text-zinc-500">
+          {time} · {amount}
+        </span>
+      </div>
+      <StateChip state={state} />
+    </li>
+  );
 }
 
 function ActivityRowView({ row }: { row: ActivityRow }): JSX.Element {
   return (
-    <li className="rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs">
-      <span className="text-zinc-500">{formatTime(row.created_at)}</span>{' '}
-      <code className="text-zinc-200">{row.type}</code>{' '}
-      <span className="text-zinc-500">
-        {row.gateway} · {(row.amount_minor / 100).toFixed(2)} {row.currency} · {row.state}
-      </span>
-    </li>
+    <FeedRow
+      time={formatTime(row.created_at)}
+      title={row.type}
+      gateway={row.gateway}
+      amount={formatAmount(row.amount_minor, row.currency)}
+      state={row.state}
+    />
   );
 }
 
@@ -80,35 +108,27 @@ function LiveFeed({
 
   if (status === 'error') {
     return (
-      <p role="alert" className="mt-2 text-xs text-red-400">
+      <p role="alert" className="text-xs text-red-400">
         Live updates stopped: {error.message}
       </p>
     );
   }
   return (
     <div>
-      <p className="mt-1 text-xs text-zinc-500">
-        <span
-          className={
-            status === 'live'
-              ? 'font-semibold text-emerald-400'
-              : status === 'closed'
-                ? 'text-red-400'
-                : 'text-amber-400'
-          }
-        >
-          {statusLabel(status)}
-        </span>{' '}
-        · streaming from Neon Realtime
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <LiveBadge status={status} label={statusLabel(status)} />
+        <span className="text-[11px] text-zinc-500">Neon Realtime</span>
+      </div>
       {data === undefined ? (
-        <p className="mt-2 text-sm text-zinc-500">Loading activity…</p>
+        <p className="mt-3 text-sm text-zinc-500">Loading activity…</p>
       ) : data.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-500">
-          No activity yet — run a payment and watch it land here instantly.
-        </p>
+        <div className="mt-3">
+          <EmptyState title="No activity yet" icon="〰">
+            Run a payment and watch it land here instantly.
+          </EmptyState>
+        </div>
       ) : (
-        <ul className="mt-2 max-h-64 space-y-1 overflow-auto">
+        <ul className="mt-2 max-h-[26rem] overflow-auto pr-1">
           {data.map((row) => (
             <ActivityRowView key={row.id} row={row} />
           ))}
@@ -124,24 +144,30 @@ function FallbackFeed({ workspace }: { workspace: string }): JSX.Element {
   const rows = (txns.data ?? []).slice(0, 10);
   return (
     <div>
-      <p className="mt-1 text-xs text-zinc-500">Neon Realtime not configured — recent updates</p>
-      {txns.isPending && <p className="mt-2 text-sm text-zinc-500">Loading…</p>}
+      <div className="flex items-center justify-between gap-2">
+        <LiveBadge status="polling" label="Recent updates" />
+        <span className="text-[11px] text-zinc-500">Neon Realtime not configured</span>
+      </div>
+      {txns.isPending && <p className="mt-3 text-sm text-zinc-500">Loading…</p>}
       {txns.isError && (
-        <p className="mt-2 text-sm text-red-400">Failed: {(txns.error as Error).message}</p>
+        <p className="mt-3 text-sm text-red-400">Failed: {(txns.error as Error).message}</p>
       )}
-      <ul className="mt-2 max-h-64 space-y-1 overflow-auto">
+      <ul className="mt-2 max-h-[26rem] overflow-auto pr-1">
         {rows.map((txn) => (
-          <li key={txn.id} className="rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs">
-            <span className="text-zinc-500">{formatTime(new Date(txn.createdAt))}</span>{' '}
-            <code className="text-zinc-200">{txn.gatewayTxnId ?? txn.id.slice(0, 8)}</code>{' '}
-            <span className="text-zinc-500">
-              {txn.gateway} · {(txn.amountMinor / 100).toFixed(2)} {txn.currency} · {txn.state}
-            </span>
-          </li>
+          <FeedRow
+            key={txn.id}
+            time={formatTime(new Date(txn.createdAt))}
+            title={txn.gatewayTxnId ?? txn.id.slice(0, 8)}
+            gateway={txn.gateway}
+            amount={formatAmount(txn.amountMinor, txn.currency)}
+            state={txn.state}
+          />
         ))}
       </ul>
       {txns.data && txns.data.length === 0 && (
-        <p className="mt-2 text-sm text-zinc-500">No transactions yet.</p>
+        <div className="mt-3">
+          <EmptyState title="No transactions yet" />
+        </div>
       )}
     </div>
   );
@@ -158,10 +184,10 @@ export default function ActivityFeed({ workspace }: { workspace: string }): JSX.
   // Sealed fetch failed for a real error (not "unconfigured"): surface it.
   if (sealed && !sealed.fallback && !sealed.sealedQuery) {
     return (
-      <p role="alert" className="mt-2 text-xs text-red-400">
+      <p role="alert" className="text-xs text-red-400">
         Couldn&apos;t open the live feed.
       </p>
     );
   }
-  return <p className="mt-2 text-sm text-zinc-500">Loading activity…</p>;
+  return <p className="text-sm text-zinc-500">Connecting to the live feed…</p>;
 }

@@ -57,7 +57,7 @@ jobs:
           done
           curl -sf http://127.0.0.1:3001/api/health > /dev/null
           set +e
-          pnpm --filter @paysim/parity parity -- --base-url http://127.0.0.1:3001
+          pnpm --filter @paysim/parity parity --base-url http://127.0.0.1:3001
           code=$?
           kill "$(cat /tmp/paysim.pid)" || true
           exit $code
