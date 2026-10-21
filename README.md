@@ -45,20 +45,20 @@ deterministic stand-in you fully control.
 
 ## Screenshots
 
-| Dark                                                                       | Light                                                                        |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| ![Overview (dark)](docs/screenshots/overview-dark.png)                     | ![Overview (light)](docs/screenshots/overview-light.png)                     |
-| ![Transactions (dark)](docs/screenshots/transactions-dark.png)             | ![Transactions (light)](docs/screenshots/transactions-light.png)             |
-| ![Transaction detail (dark)](docs/screenshots/transaction-detail-dark.png) | ![Transaction detail (light)](docs/screenshots/transaction-detail-light.png) |
-| ![Gateways (dark)](docs/screenshots/gateways-dark.png)                     | ![Gateways (light)](docs/screenshots/gateways-light.png)                     |
-| ![Scenarios & clock (dark)](docs/screenshots/scenarios-dark.png)           | ![Scenarios & clock (light)](docs/screenshots/scenarios-light.png)           |
-| ![Get started (dark)](docs/screenshots/start-dark.png)                     | ![Get started (light)](docs/screenshots/start-light.png)                     |
+One run through the simulator, from setup to a settled payment.
 
-Simulated hosted checkout pages (clearly labelled as a simulator):
-
-| SSLCommerz                                                                 | bKash                                                            |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| ![SSLCommerz simulated checkout](docs/screenshots/checkout-sslcommerz.png) | ![bKash simulated checkout](docs/screenshots/checkout-bkash.png) |
+|                                                                                                                                                |                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Get started](docs/screenshots/start.png)                                                                                                     | ![SSLCommerz checkout](docs/screenshots/checkout-sslcommerz.png)                                                                                                      |
+| **Get started** — copy the base URL, pick a `SIM:` marker for the outcome you want, and fire your first test payment with the ready-made curl. | **SSLCommerz checkout** — the simulated hosted payment page your customer is redirected to; choose Success, Fail or Cancel.                                           |
+| ![bKash checkout](docs/screenshots/checkout-bkash.png)                                                                                         | ![Nagad checkout](docs/screenshots/checkout-nagad.png)                                                                                                                |
+| **bKash checkout** — tokenized checkout page after grant-token and create payment; Verify & Pay, fail or cancel.                               | **Nagad checkout** — reached after the RSA-sealed initialize and complete calls; approve, fail or cancel the payment.                                                 |
+| ![Live event feed](docs/screenshots/live-feed.png)                                                                                             | ![Transaction timeline](docs/screenshots/transaction-timeline.png)                                                                                                    |
+| **Live event feed** — every gateway event streams in as it happens, next to totals per outcome and the latest transactions.                    | **Test payment timeline** — one SSLCommerz payment end to end: init, scenario attached, checkout viewed, success, IPN, each with a redacted payload and copy-as-curl. |
+| ![Transactions](docs/screenshots/transactions.png)                                                                                             | ![Scenarios & clock](docs/screenshots/scenarios.png)                                                                                                                  |
+| **Transactions** — filter by gateway or search by reference; any row opens its full request/callback timeline.                                 | **Scenarios & clock** — the per-gateway scenario catalog plus a fake clock to fast-forward expiries and delayed callbacks.                                            |
+| ![Gateways](docs/screenshots/gateways.png)                                                                                                     |                                                                                                                                                                       |
+| **Gateways** — merchant apps per gateway with their (redacted) credentials and default scenario.                                               |                                                                                                                                                                       |
 
 ## Tech stack
 
