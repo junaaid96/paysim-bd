@@ -444,16 +444,61 @@ function ScenarioCatalog({ workspace }: { workspace: string }): JSX.Element {
   );
 }
 
+const CREDIT_HREF = 'https://junaidul.pro.bd/codejborg';
+
+/**
+ * "Developed by <CodeJBorg />" credit pill, same pattern as ScopeLock and
+ * Forgeline: code-icon disc, name with accent angle brackets, blinking
+ * cursor (motion-safe), up-right arrow that nudges on hover. Mapped to this
+ * app's emerald accent and zinc neutrals (light theme remaps them).
+ */
 function CodeJBorgCredit({ className = '' }: { className?: string }): JSX.Element {
   return (
     <a
-      href="https://junaidul.pro.bd"
+      href={CREDIT_HREF}
       target="_blank"
-      rel="noreferrer"
-      className={`text-xs text-zinc-500 hover:text-zinc-300 ${className}`}
+      rel="noopener noreferrer"
+      aria-label="Developed by CodeJBorg — visit developer website"
+      className={`group inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border border-zinc-700 bg-zinc-950 py-1.5 pr-3 pl-1.5 font-mono text-[11px] tracking-wide text-zinc-400 transition-colors duration-300 hover:border-emerald-500 hover:bg-emerald-950 hover:text-zinc-100 ${className}`}
     >
-      Developed by{' '}
-      <span className="font-mono font-semibold text-emerald-400">&lt;CodeJBorg /&gt;</span>
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="size-3.5"
+        >
+          <path d="m18 16 4-4-4-4" />
+          <path d="m6 8-4 4 4 4" />
+          <path d="m14.5 4-5 16" />
+        </svg>
+      </span>
+      <span className="whitespace-nowrap">Developed by</span>
+      <span className="font-semibold whitespace-nowrap text-zinc-100">
+        <span className="text-emerald-400">&lt;</span>CodeJBorg
+        <span className="text-emerald-400"> /&gt;</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="inline-block h-3.5 w-[2px] shrink-0 bg-emerald-500 motion-safe:animate-pulse"
+      />
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="size-3.5 shrink-0 opacity-40 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100"
+      >
+        <path d="M7 7h10v10" />
+        <path d="M7 17 17 7" />
+      </svg>
     </a>
   );
 }
@@ -517,7 +562,7 @@ export default function App(): JSX.Element {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-zinc-800 bg-zinc-900 transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 flex w-76 flex-col border-r border-zinc-800 bg-zinc-900 transition-transform lg:translate-x-0 ${
           navOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -565,7 +610,7 @@ export default function App(): JSX.Element {
               GitHub ↗
             </a>
           </div>
-          <CodeJBorgCredit className="block" />
+          <CodeJBorgCredit />
         </div>
       </aside>
       {navOpen && (
@@ -575,7 +620,7 @@ export default function App(): JSX.Element {
         />
       )}
 
-      <div className="lg:pl-64">
+      <div className="lg:pl-76">
         <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-zinc-800 bg-zinc-950/85 px-4 py-3 backdrop-blur sm:px-6">
           <button
             type="button"
@@ -749,7 +794,6 @@ export default function App(): JSX.Element {
 
           <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-4 text-xs text-zinc-500">
             <span>PaySim BD · open source (MIT) · not affiliated with any payment provider</span>
-            <CodeJBorgCredit />
           </footer>
         </main>
       </div>
