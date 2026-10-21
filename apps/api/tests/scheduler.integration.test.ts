@@ -146,6 +146,11 @@ maybe('scheduler integration', () => {
       source: 'magic',
     });
     await host.waitFor(async () => (await txnState(host, txn.id)) === 'valid', 'txn to settle');
+    // The state flips before scenario.ended is written; wait for both.
+    await host.waitFor(
+      async () => (await eventTypes(host, txn.id)).includes('scenario.ended'),
+      'settle scenario to end',
+    );
     const ended = (await host.queries.getTransactionDetail(txn.id))?.events.find(
       (event) => event.type === 'scenario.ended',
     );
