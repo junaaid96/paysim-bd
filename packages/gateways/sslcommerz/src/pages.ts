@@ -2,6 +2,8 @@
 // return form. Content is ours (SIMULATOR banner everywhere); only the
 // gw.php path + SESSIONKEY param mirror the real gateway.
 
+import { createHash } from 'node:crypto';
+
 export function escapeHtml(input: string): string {
   return input
     .replace(/&/g, '&amp;')
@@ -72,6 +74,27 @@ export function checkoutPage(input: CheckoutPageInput): string {
   );
 }
 
+/** Inline auto-submit script of the return page (hashed into its CSP). */
+export const AUTO_SUBMIT_SCRIPT = 'document.getElementById("sim-return").submit();';
+
+/**
+ * CSP for the return page: the default helmet policy blocks both the inline
+ * auto-submit script and a form POST to the merchant's (external) URL, which
+ * left browsers stuck on "Returning to merchant…".
+ */
+export function autoPostCsp(): string {
+  const hash = createHash('sha256').update(AUTO_SUBMIT_SCRIPT).digest('base64');
+  return [
+    "default-src 'self'",
+    `script-src 'sha256-${hash}'`,
+    "style-src 'self' 'unsafe-inline'",
+    'form-action http: https:',
+    "base-uri 'self'",
+    "frame-ancestors 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
+
 export function autoPostForm(targetUrl: string, fields: Record<string, string>): string {
   const inputs = Object.entries(fields)
     .map(
@@ -85,7 +108,7 @@ export function autoPostForm(targetUrl: string, fields: Record<string, string>):
       `<p>If you are not redirected, press the button.</p>` +
       `<form id="sim-return" method="POST" action="${escapeHtml(targetUrl)}">${inputs}` +
       '<button type="submit">Continue</button></form>' +
-      '<script>document.getElementById("sim-return").submit();</script>',
+      `<script>${AUTO_SUBMIT_SCRIPT}</script>`,
   );
 }
 

@@ -26,6 +26,10 @@ import {
   type SessionExpiryPayload,
 } from './jobs.js';
 
+function defaultSleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** Largest setTimeout delay; longer waits re-arm on fire. */
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
@@ -76,6 +80,25 @@ export class Scheduler {
         error: err instanceof Error ? err.message : String(err),
       });
     });
+  }
+
+  /**
+   * Serverless hosts: keep running due jobs until nothing is due before
+   * `deadline` (wall clock). Timers do not survive a frozen function, so
+   * the host calls this via waitUntil after each response; scenario steps
+   * a few seconds out then fire on time instead of on the next request.
+   */
+  async drainUntil(deadline: number, sleep = defaultSleep): Promise<number> {
+    let runs = 0;
+    while (!this.stopped) {
+      await this.processDue();
+      runs += 1;
+      const next = await nextPendingRunAt(this.deps.db);
+      if (!next || next.getTime() > deadline) break;
+      const wait = next.getTime() - Date.now();
+      if (wait > 0) await sleep(wait);
+    }
+    return runs;
   }
 
   /** Test hook: run one synchronous pass over due jobs. */

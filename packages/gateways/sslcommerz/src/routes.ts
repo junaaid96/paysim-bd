@@ -25,7 +25,7 @@ import {
   generateSessionKey,
 } from './builders.js';
 import { completeCheckout } from './checkout.js';
-import { autoPostForm, checkoutPage, errorPage } from './pages.js';
+import { autoPostCsp, autoPostForm, checkoutPage, errorPage } from './pages.js';
 import { CHECKOUT_ACTIONS, type CheckoutAction } from './state-machine.js';
 import { asString, firstQueryParam, headersToRecord } from './util.js';
 
@@ -239,7 +239,8 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       return;
     }
     const txn = await ctx.stores.findTransactionByMetadata(GATEWAY, 'valId', valId);
-    if (!txn || txn.state !== 'valid') {
+    // A store may only validate its own payments (val_ids are not secrets).
+    if (!txn || txn.state !== 'valid' || txn.gatewayAppId !== app.id) {
       res.status(200).json({ status: 'INVALID_TRANSACTION' });
       return;
     }
@@ -362,6 +363,7 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       type: 'sslcommerz.callback.rendered',
       data: { kind, targetUrl, payload: redactValue(callbackPayload) },
     });
+    res.setHeader('Content-Security-Policy', autoPostCsp());
     res.status(200).send(autoPostForm(targetUrl, callbackPayload));
   });
 

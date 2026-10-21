@@ -44,9 +44,13 @@ jobs:
       # Parity suite against a booted API (default env: hosted-like, private
       # callback targets blocked). Fails on fixture mismatches and on any
       # "verified" badge claim without passing real-sandbox coverage.
+      # Fresh database: the test suite above leaves its own fixture apps in
+      # `paysim`, which shadowed the seeded default store (parity then saw
+      # "Invalid store credentials").
       - run: |
           set -e
-          DATABASE_URL=postgres://paysim:paysim@localhost:5432/paysim \
+          PGPASSWORD=paysim psql -h localhost -U paysim -d paysim -c 'CREATE DATABASE paysim_parity'
+          DATABASE_URL=postgres://paysim:paysim@localhost:5432/paysim_parity \
             PORT=3001 SIM_BASE_URL=http://127.0.0.1:3001 \
             pnpm --filter @paysim/api start &
           echo $! > /tmp/paysim.pid
@@ -57,7 +61,7 @@ jobs:
           done
           curl -sf http://127.0.0.1:3001/api/health > /dev/null
           set +e
-          pnpm --filter @paysim/parity parity -- --base-url http://127.0.0.1:3001
+          pnpm --filter @paysim/parity parity --base-url http://127.0.0.1:3001
           code=$?
           kill "$(cat /tmp/paysim.pid)" || true
           exit $code

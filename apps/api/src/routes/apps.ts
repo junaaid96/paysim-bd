@@ -4,6 +4,8 @@ import { z } from 'zod';
 import {
   DEFAULT_WORKSPACE_KEY,
   assertFakeCredentials,
+  redactValue,
+  type AppRecord,
   type GatewayPlugin,
   type PluginStores,
 } from '@paysim/core';
@@ -31,6 +33,15 @@ const IdParamSchema = z.object({ id: z.string().uuid() });
 
 const UpdateAppSchema = z.object({ defaultScenarioId: z.string().uuid().nullable() });
 
+/**
+ * Public view of an app: secret-looking credential fields are redacted.
+ * Identifiers (store_id, app_key, merchant_id) stay visible so the
+ * dashboard can label apps; the secrets are only echoed once, on create.
+ */
+export function publicApp(app: AppRecord): AppRecord {
+  return { ...app, credentials: redactValue(app.credentials) };
+}
+
 export function createAppsRouter(deps: AppsDeps): Router {
   const router = Router();
   const knownHosts = [
@@ -45,7 +56,7 @@ export function createAppsRouter(deps: AppsDeps): Router {
       sendError(res, 404, 'unknown_workspace');
       return;
     }
-    res.json(await deps.queries.listApps(workspaceKey));
+    res.json((await deps.queries.listApps(workspaceKey)).map(publicApp));
   });
 
   router.post('/', async (req: Request, res: Response) => {
@@ -143,7 +154,7 @@ export function createAppsRouter(deps: AppsDeps): Router {
       sendError(res, 404, 'not_found');
       return;
     }
-    res.json(updated);
+    res.json(publicApp(updated));
   });
 
   return router;

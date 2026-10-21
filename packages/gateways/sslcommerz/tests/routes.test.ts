@@ -1,7 +1,10 @@
+import { createHash } from 'node:crypto';
+
 import express from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { AUTO_SUBMIT_SCRIPT } from '../src/pages.js';
 import { createSslcommerzRouter } from '../src/routes.js';
 import { verifySignature } from '../src/verify.js';
 import { makeCtx, type FakeContext } from './fakes.js';
@@ -110,6 +113,12 @@ describe('sslcommerz routes', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('http://client.test/pay/success');
     expect(res.text).toContain('name="tran_id"');
+    // The return page must be allowed to auto-POST to the merchant's URL.
+    const csp = String(res.headers['content-security-policy']);
+    expect(csp).toContain('form-action http: https:');
+    const hash = createHash('sha256').update(AUTO_SUBMIT_SCRIPT).digest('base64');
+    expect(csp).toContain(`'sha256-${hash}'`);
+    expect(res.text).toContain(`<script>${AUTO_SUBMIT_SCRIPT}</script>`);
 
     expect(fakes.delivered).toHaveLength(1);
     const ipn = fakes.delivered[0];
@@ -187,6 +196,16 @@ describe('sslcommerz routes', () => {
       `/validator/api/validationserverAPI.php?val_id=${valId}&store_id=testbox&store_passwd=qwerty&format=json`,
     );
     expect(second.body.status).toBe('VALIDATED');
+
+    // Another store's credentials cannot validate this payment.
+    fakes.stores.seedApp({
+      id: 'other-app',
+      credentials: { store_id: 'otherbox', store_passwd: 'other' },
+    });
+    const foreign = await request(app).get(
+      `/validator/api/validationserverAPI.php?val_id=${valId}&store_id=otherbox&store_passwd=other&format=json`,
+    );
+    expect(foreign.body.status).toBe('INVALID_TRANSACTION');
 
     const unknown = await request(app).get(
       '/validator/api/validationserverAPI.php?val_id=nope&store_id=testbox&store_passwd=qwerty&format=json',

@@ -35,6 +35,7 @@ export type {
   PluginContext,
   PluginLogger,
   PluginStores,
+  KeyValueStore,
   RecordDeliveryInput,
   RecordEventInput,
   ResolvedScenario,
