@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1153.0",
+    "@neon/realtime": "0.1.2",
     "@paysim/core": "workspace:*",
     "@paysim/gateway-bkash": "workspace:*",
     "@paysim/gateway-nagad": "workspace:*",

@@ -45,6 +45,8 @@ export type {
   TxnRecord,
 } from './plugin.js';
 export type { DeliverCallbackInput } from './plugin.js';
+export { ActivityRowSchema } from './live.js';
+export type { ActivityRow } from './live.js';
 export { redactHeaders, redactValue, truncateUtf8, utf8ByteLength } from './redact.js';
 export {
   MAGIC_VALUE_PREFIX,

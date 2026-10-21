@@ -137,25 +137,27 @@ update live.
 All configuration is environment variables, validated at boot with Zod
 (`apps/api/src/env.ts`). See [.env.example](.env.example) for defaults.
 
-| Variable                         | Required | Description                                                                      |
-| -------------------------------- | -------- | -------------------------------------------------------------------------------- |
-| `DATABASE_URL`                   | Yes      | Postgres URL. For Neon use the pooled string with `sslmode=require`.             |
-| `TEST_DATABASE_URL`              | Tests    | Database the integration tests may create tables in and truncate.                |
-| `DB_POOL_MAX`                    | No       | Connection pool size (default `5`).                                              |
-| `NODE_ENV`                       | No       | `development`, `test` or `production`.                                           |
-| `PORT` / `HOST`                  | No       | API listen address (default `0.0.0.0:3001`).                                     |
-| `LOG_LEVEL`                      | No       | Pino log level (default `info`).                                                 |
-| `STORAGE_DRIVER`                 | No       | `fs` (local disk) or `s3`. `fs` is refused in production.                        |
-| `STORAGE_FS_DIR`                 | No       | Directory for the `fs` driver.                                                   |
-| `S3_ENDPOINT`                    | If `s3`  | S3-compatible endpoint (e.g. Cloudflare R2).                                     |
-| `S3_REGION`                      | No       | Region (default `auto`).                                                         |
-| `S3_BUCKET`                      | If `s3`  | Bucket name.                                                                     |
-| `S3_ACCESS_KEY_ID`               | If `s3`  | Access key ID.                                                                   |
-| `S3_SECRET_ACCESS_KEY`           | If `s3`  | Secret access key.                                                               |
-| `S3_FORCE_PATH_STYLE`            | No       | Path-style addressing (default `true`).                                          |
-| `ALLOW_PRIVATE_CALLBACK_TARGETS` | No       | `true` lets callbacks reach localhost/private IPs (local only). Default `false`. |
-| `CORS_ORIGIN`                    | No       | Comma-separated extra allowed origins.                                           |
-| `WEB_DIST_DIR`                   | No       | Built dashboard directory served by Express (auto-detected).                     |
+| Variable                                       | Required | Description                                                                      |
+| ---------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                 | Yes      | Postgres URL. For Neon use the pooled string with `sslmode=require`.             |
+| `TEST_DATABASE_URL`                            | Tests    | Database the integration tests may create tables in and truncate.                |
+| `DB_POOL_MAX`                                  | No       | Connection pool size (default `5`).                                              |
+| `NODE_ENV`                                     | No       | `development`, `test` or `production`.                                           |
+| `PORT` / `HOST`                                | No       | API listen address (default `0.0.0.0:3001`).                                     |
+| `LOG_LEVEL`                                    | No       | Pino log level (default `info`).                                                 |
+| `STORAGE_DRIVER`                               | No       | `fs` (local disk) or `s3`. `fs` is refused in production.                        |
+| `STORAGE_FS_DIR`                               | No       | Directory for the `fs` driver.                                                   |
+| `S3_ENDPOINT`                                  | If `s3`  | S3-compatible endpoint (e.g. Cloudflare R2).                                     |
+| `S3_REGION`                                    | No       | Region (default `auto`).                                                         |
+| `S3_BUCKET`                                    | If `s3`  | Bucket name.                                                                     |
+| `S3_ACCESS_KEY_ID`                             | If `s3`  | Access key ID.                                                                   |
+| `S3_SECRET_ACCESS_KEY`                         | If `s3`  | Secret access key.                                                               |
+| `S3_FORCE_PATH_STYLE`                          | No       | Path-style addressing (default `true`).                                          |
+| `ALLOW_PRIVATE_CALLBACK_TARGETS`               | No       | `true` lets callbacks reach localhost/private IPs (local only). Default `false`. |
+| `CORS_ORIGIN`                                  | No       | Comma-separated extra allowed origins.                                           |
+| `WEB_DIST_DIR`                                 | No       | Built dashboard directory served by Express (auto-detected).                     |
+| `NEON_REALTIME_SECRET`                         | No       | Neon Realtime secret for sealing live queries (unset = feed falls back to REST). |
+| `NEON_REALTIME_URL` / `VITE_NEON_REALTIME_URL` | No       | Realtime WebSocket URL (server / public Vite var, same value).                   |
 
 ## Scripts
 
@@ -181,6 +183,12 @@ All configuration is environment variables, validated at boot with Zod
 The hosted instance cannot reach your localhost. This is deliberate SSRF
 protection (`ALLOW_PRIVATE_CALLBACK_TARGETS=false`), not a bug. Run it locally
 to receive callbacks on your own machine.
+
+In every mode the dashboard origin doubles as the gateway base URL: point your
+app at it and call `/gwprocess/*`, `/validator/*`, `/v2/tokenized-checkout/*`,
+`/bkash/*`, `/remote-payment-gateway-1.0/*` or `/nagad/*` directly (Vercel
+rewrites, the compose nginx proxy and the Vite dev proxy all route these to
+the API).
 
 ## Deployment
 

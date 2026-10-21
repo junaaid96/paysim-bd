@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { SealedLiveQuery } from '@neon/realtime/client';
+import type { ActivityRow } from '@paysim/core';
 import {
   AppRecordSchema,
   DeliveryRecordSchema,
@@ -50,7 +52,14 @@ export const ClockStateSchema = z.object({
   jobsShifted: z.number().optional(),
 });
 export type ClockState = z.infer<typeof ClockStateSchema>;
-export type { AppRecord, DeliveryRecord, EventRecord, GatewaySpec, TxnRecord } from '@paysim/core';
+export type {
+  ActivityRow,
+  AppRecord,
+  DeliveryRecord,
+  EventRecord,
+  GatewaySpec,
+  TxnRecord,
+} from '@paysim/core';
 
 export function workspaceKey(): string {
   return new URLSearchParams(window.location.search).get('workspace') ?? 'local-default';
@@ -125,6 +134,32 @@ export async function resetClock(workspace: string): Promise<ClockState> {
   return ClockStateSchema.parse(
     await sendJson('POST', '/api/clock/reset', { workspaceKey: workspace }),
   );
+}
+
+export async function createApp(input: {
+  workspaceKey: string;
+  gateway: string;
+  name: string;
+  credentials: Record<string, unknown>;
+}): Promise<AppRecord> {
+  return AppRecordSchema.parse(await sendJson('POST', '/api/apps', input));
+}
+
+export const SealedActivitySchema = z.object({
+  sealed: z.object({
+    capability: z.string(),
+    expiresAt: z.number(),
+    queryFingerprint: z.string(),
+  }),
+});
+
+export async function fetchSealedActivity(
+  workspace: string,
+): Promise<SealedLiveQuery<ActivityRow>> {
+  const parsed = SealedActivitySchema.parse(
+    await sendJson('POST', '/api/live/activity', { workspaceKey: workspace }),
+  );
+  return parsed.sealed as SealedLiveQuery<ActivityRow>;
 }
 
 export async function updateAppDefault(

@@ -31,6 +31,7 @@ import { gatewayPrefixes } from './plugins.js';
 import { createAppsRouter } from './routes/apps.js';
 import { createClockRouter } from './routes/clock.js';
 import { createHealthRouter } from './routes/health.js';
+import { createLiveRouter } from './routes/live.js';
 import { createScenariosRouter } from './routes/scenarios.js';
 import { createSpecsRouter } from './routes/specs.js';
 import { createStreamRouter } from './routes/stream.js';
@@ -144,6 +145,7 @@ export function createApp(deps: AppDeps): Application {
     }),
   );
   app.use('/api', createStreamRouter({ bus: deps.bus, queries: deps.queries }));
+  app.use('/api/live', createLiveRouter({ env: deps.env, queries: deps.queries }));
 
   for (const plugin of deps.plugins) {
     const router = plugin.createRouter({

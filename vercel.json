@@ -12,6 +12,12 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/gwprocess/(.*)", "destination": "/api" },
+    { "source": "/validator/(.*)", "destination": "/api" },
+    { "source": "/v2/tokenized-checkout/(.*)", "destination": "/api" },
+    { "source": "/bkash/(.*)", "destination": "/api" },
+    { "source": "/remote-payment-gateway-1.0/(.*)", "destination": "/api" },
+    { "source": "/nagad/(.*)", "destination": "/api" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }

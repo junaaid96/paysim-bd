@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
+import './dotenv.js';
 
 import { bootApp } from './boot.js';
 import { loadEnv } from './env.js';

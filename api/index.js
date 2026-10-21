@@ -26,7 +26,13 @@ function createStorage(env, logger) {
 async function init() {
   const env = loadEnv(process.env);
   const logger = createLogger(env);
-  const vercelUrl = (process.env.VERCEL_URL ?? '').trim();
+  // Production deployments should emit the stable production hostname in
+  // GatewayPageURL/callbacks, not the deployment-specific VERCEL_URL.
+  const vercelUrl = (
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    process.env.VERCEL_URL ??
+    ''
+  ).trim();
   const { app } = await bootApp({
     env,
     logger,

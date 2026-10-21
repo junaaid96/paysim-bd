@@ -1,9 +1,7 @@
 // Standalone `pnpm db:migrate` entrypoint for CI and operators.
 // The server also migrates on boot (migrations are idempotent).
 
-import dotenv from 'dotenv';
-
-dotenv.config();
+import '../dotenv.js';
 
 import { loadEnv } from '../env.js';
 import { createLogger } from '../logger.js';

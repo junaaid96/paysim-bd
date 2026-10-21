@@ -41,6 +41,8 @@ const envSchema = z
     WEB_DIST_DIR: z.string().optional(),
     /** Public base URL of this simulator (GatewayPageURL etc). Defaults to http://localhost:PORT. */
     SIM_BASE_URL: z.string().optional(),
+    /** Neon Realtime secret for sealing live queries. Unset = live feed disabled (REST+SSE fallback). */
+    NEON_REALTIME_SECRET: z.string().optional(),
   })
   .refine((env) => env.STORAGE_DRIVER !== 's3' || nonEmpty(env.S3_ENDPOINT) !== undefined, {
     message: 'S3_ENDPOINT is required when STORAGE_DRIVER=s3',

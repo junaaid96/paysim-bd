@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type JSX } from 'react';
 
+import ActivityFeed from './ActivityFeed';
+import Onboarding from './Onboarding';
 import TxnDetail from './TxnDetail';
 import {
   advanceClock,
@@ -239,10 +241,21 @@ export default function App(): JSX.Element {
             api {health.data ? `${health.data.status} v${health.data.version}` : '…'}
           </span>
         </div>
+        <p className="mt-1 text-sm text-zinc-400">
+          Fake SSLCommerz, bKash and Nagad gateways for development and testing — drive any payment
+          outcome on demand.
+        </p>
+
+        <Onboarding workspace={workspace} />
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
           <section className="lg:col-span-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+              Live activity
+            </h2>
+            <ActivityFeed workspace={workspace} />
+
+            <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-zinc-400">
               Gateway apps
             </h2>
             {apps.isPending && <p className="mt-2 text-sm text-zinc-500">Loading…</p>}
@@ -290,7 +303,8 @@ export default function App(): JSX.Element {
             </ul>
             {txns.data && txns.data.length === 0 && (
               <p className="mt-2 text-sm text-zinc-500">
-                No transactions yet — run the sample client or POST an init.
+                No transactions yet — POST a payment init to the base URL above with a SIM: marker
+                (e.g. <code>value_d=SIM:immediate-success</code>), then it will appear here live.
               </p>
             )}
           </section>

@@ -9,7 +9,10 @@
     "baseUrl": ".",
     "paths": {
       "@paysim/core": ["../../packages/core/src/index.ts"],
-      "@paysim/gateway-sslcommerz": ["../../packages/gateways/sslcommerz/src/index.ts"]
+      "@paysim/gateway-bkash": ["../../packages/gateways/bkash/src/index.ts"],
+      "@paysim/gateway-nagad": ["../../packages/gateways/nagad/src/index.ts"],
+      "@paysim/gateway-sslcommerz": ["../../packages/gateways/sslcommerz/src/index.ts"],
+      "@paysim/parity": ["../../packages/parity/src/index.ts"]
     }
   },
   "include": ["src", "tests", "drizzle.config.ts", "vitest.config.ts"]
