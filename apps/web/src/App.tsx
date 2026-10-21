@@ -41,6 +41,28 @@ const NAV: Array<{ id: View; label: string; icon: string }> = [
   { id: 'start', label: 'Get started', icon: '➜' },
 ];
 
+const START_SEEN_KEY = 'paysim-start-seen';
+
+function RocketIcon(): JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-4 shrink-0"
+    >
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </svg>
+  );
+}
+
 const REPO_URL = 'https://github.com/junaaid96/paysim-bd';
 
 function viewFromHash(): View {
@@ -493,6 +515,9 @@ export default function App(): JSX.Element {
   const [view, setView] = useState<View>(viewFromHash);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [startSeen, setStartSeen] = useState(
+    () => window.localStorage.getItem(START_SEEN_KEY) === '1',
+  );
   const [gatewayFilter, setGatewayFilter] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -501,6 +526,13 @@ export default function App(): JSX.Element {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  useEffect(() => {
+    if (view === 'start' && !startSeen) {
+      window.localStorage.setItem(START_SEEN_KEY, '1');
+      setStartSeen(true);
+    }
+  }, [view, startSeen]);
 
   const go = (next: View): void => {
     window.location.hash = next;
@@ -522,6 +554,7 @@ export default function App(): JSX.Element {
   const closeDrawer = useCallback((): void => setSelectedId(null), []);
   const title = NAV.find((item) => item.id === view)?.label ?? 'Overview';
   const firstRun = txns.data !== undefined && allTxns.length === 0;
+  const showStartBadge = !startSeen && txns.data !== undefined && allTxns.length === 0;
 
   const txnsBody = (list: TxnRecord[], compact: boolean): JSX.Element => {
     if (txns.isPending) return <p className="text-sm text-zinc-500">Loading transactions…</p>;
@@ -555,8 +588,30 @@ export default function App(): JSX.Element {
             <div className="text-[11px] text-zinc-500">Payment gateway simulator</div>
           </div>
         </div>
+        <div className="px-3 pb-3">
+          <button
+            type="button"
+            onClick={() => go('start')}
+            aria-current={view === 'start' ? 'page' : undefined}
+            className={`flex w-full items-center gap-2.5 rounded-lg border border-primary/40 bg-primary-soft px-3 py-2.5 text-sm font-semibold text-primary transition hover:border-primary ${
+              view === 'start' ? 'border-primary ring-1 ring-primary/40' : ''
+            }`}
+          >
+            <RocketIcon />
+            Get started
+            {showStartBadge && (
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex size-full rounded-full bg-primary opacity-75 motion-safe:animate-ping" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
+                </span>
+                Start here
+              </span>
+            )}
+          </button>
+        </div>
         <nav className="flex-1 space-y-0.5 px-3">
-          {NAV.map((item) => (
+          {NAV.filter((item) => item.id !== 'start').map((item) => (
             <button
               key={item.id}
               type="button"
@@ -635,13 +690,20 @@ export default function App(): JSX.Element {
           {view === 'overview' && (
             <>
               {firstRun && (
-                <div className="card flex flex-wrap items-center justify-between gap-3 bg-emerald-950 p-4">
-                  <div>
-                    <div className="font-semibold text-emerald-300">Welcome to PaySim BD</div>
-                    <p className="text-sm text-zinc-400">
-                      Point your app at this simulator and run your first fake payment in under a
-                      minute.
-                    </p>
+                <div className="card flex flex-wrap items-center justify-between gap-3 border-primary/40 bg-primary-soft p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-primary">
+                      <RocketIcon />
+                    </span>
+                    <div>
+                      <div className="font-semibold text-primary">
+                        New here? Run your first test payment in 2 minutes
+                      </div>
+                      <p className="text-sm text-zinc-400">
+                        Follow Get started to point your app at this simulator and watch the fake
+                        payment land here live.
+                      </p>
+                    </div>
                   </div>
                   <button type="button" className="btn-primary" onClick={() => go('start')}>
                     Get started →
