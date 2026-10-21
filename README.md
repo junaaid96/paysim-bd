@@ -65,6 +65,17 @@ One run through the simulator, from setup to a settled payment.
 | ![Gateways](docs/screenshots/gateways.png)                                                                                                     |                                                                                                                                                                       |
 | **Gateways** — merchant apps per gateway with their (redacted) credentials and default scenario.                                               |                                                                                                                                                                       |
 
+## Used in QuickFood
+
+[QuickFood](https://quickfood-frontend.vercel.app/), a food delivery demo app, takes its online payments through PaySim BD:
+
+- **Checkout** offers bKash (tokenized checkout), Nagad and SSLCommerz next to cash on delivery. The Django backend talks to PaySim BD with the real gateways' request shapes, so pointing it at a real sandbox only means changing the base URL and credentials.
+- **Every outcome is handled**: success, failure and cancellation all return the customer to the order page with a clear result. They can retry on any gateway or switch to cash, and the kitchen only sees the order once it's paid.
+- **Callbacks are verified** with the gateway (bKash execute, Nagad verify, SSLCommerz validator and IPN) and the amount is checked before an order is marked paid.
+- **Refunds**: the restaurant refunds all or part of a payment with a confirm step, and cancelling a paid order refunds it automatically through the same gateway.
+
+Code: [quickfood_backend/payments](https://github.com/junaaid96/quickfood_backend/tree/main/payments) · [quickfood_frontend](https://github.com/junaaid96/quickfood_frontend)
+
 ## Tech stack
 
 | Layer      | Tech                                                       |
