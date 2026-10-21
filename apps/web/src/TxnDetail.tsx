@@ -248,7 +248,7 @@ export default function TxnDetail({ txnId }: { txnId: string }): JSX.Element {
         <GatewayMark gateway={txn.gateway} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-lg font-semibold text-zinc-100">
-            <code>{txn.gatewayTxnId ?? txn.id}</code>
+            <code>{txn.gatewayTxnId ?? txn.gatewaySessionKey ?? txn.id}</code>
           </h2>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
             <StateChip state={txn.state} />
