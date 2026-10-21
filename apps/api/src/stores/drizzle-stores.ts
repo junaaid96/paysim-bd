@@ -6,6 +6,7 @@ import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import {
   MAX_RESPONSE_SNIPPET_BYTES,
   redactValue,
+  refundIndexKey,
   truncateUtf8,
   type AppRecord,
   type CreateTxnInput,
@@ -34,6 +35,11 @@ import {
 } from '../db/schema.js';
 import type { EventBus } from '../events/bus.js';
 import type { StorageAdapter } from '../storage/index.js';
+
+/** jsonb merge in SQL so concurrent patches never clobber each other's keys. */
+function mergeMetadata(patch: Record<string, unknown>) {
+  return sql`${transactions.metadata} || ${JSON.stringify(patch)}::jsonb`;
+}
 
 export interface DrizzleStoresDeps {
   db: Db;
@@ -304,7 +310,7 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
       if (!row) throw new Error(`Unknown transaction ${id}`);
       const updated = await db
         .update(transactions)
-        .set({ state: toState, metadata: { ...row.metadata, ...metadataPatch } })
+        .set({ state: toState, metadata: mergeMetadata(metadataPatch) })
         .where(eq(transactions.id, id))
         .returning();
       const next = updated[0];
@@ -323,6 +329,43 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
 
     recordEvent: insertEvent,
 
+    async recordRefund(id, entry, guard) {
+      // One conditional UPDATE: the row lock serialises concurrent refunds,
+      // so the refunded total can never exceed the payment amount and a
+      // merchant reference can only be used once.
+      const refundedExpr = sql`coalesce((${transactions.metadata}->>'refundedMinor')::bigint, 0)`;
+      const entryJson = JSON.stringify(entry);
+      const conditions = [
+        eq(transactions.id, id),
+        sql`${refundedExpr} + ${guard.countMinor} <= ${transactions.amountMinor}`,
+      ];
+      if (guard.merchantRef) {
+        conditions.push(
+          sql`NOT (coalesce(${transactions.metadata}->'refunds', '[]'::jsonb) @> ${JSON.stringify([{ merchantRef: guard.merchantRef }])}::jsonb)`,
+        );
+      }
+      const updated = await db
+        .update(transactions)
+        .set({
+          metadata: sql`${transactions.metadata} || jsonb_build_object(
+            'refunds', coalesce(${transactions.metadata}->'refunds', '[]'::jsonb) || jsonb_build_array(${entryJson}::jsonb),
+            'refundedMinor', ${refundedExpr} + ${guard.countMinor},
+            'refundStatus', CASE
+              WHEN ${refundedExpr} + ${guard.countMinor} <= 0 THEN 'none'
+              WHEN ${refundedExpr} + ${guard.countMinor} >= ${transactions.amountMinor} THEN 'full'
+              ELSE 'partial' END
+          ) || jsonb_build_object(${refundIndexKey(String(entry['refundId']))}::text, '1')`,
+        })
+        .where(and(...conditions))
+        .returning();
+      const next = updated[0];
+      if (!next) return null;
+      const key = await workspaceKey(next.workspaceId);
+      const record = toTxn(next, key);
+      bus.publish({ type: 'txn.updated', workspaceKey: key, data: { txn: record } });
+      return record;
+    },
+
     async listDeliveries(transactionId: string) {
       const rows = await db
         .select()
@@ -340,7 +383,7 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
       if (!row) throw new Error(`Unknown transaction ${id}`);
       const updated = await db
         .update(transactions)
-        .set({ amountMinor, metadata: { ...row.metadata, ...metadataPatch } })
+        .set({ amountMinor, metadata: mergeMetadata(metadataPatch) })
         .where(eq(transactions.id, id))
         .returning();
       const next = updated[0];

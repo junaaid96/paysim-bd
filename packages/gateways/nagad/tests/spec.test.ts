@@ -29,7 +29,7 @@ describe('nagad spec manifest', () => {
     expect(
       byPath.get('POST /remote-payment-gateway-1.0/api/dfs/check-out/refund/{merchantId}')
         ?.implemented,
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('validates credentials including the RSA public key', () => {

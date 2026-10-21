@@ -24,7 +24,8 @@ describe('sslcommerz spec manifest', () => {
       fidelity: 'verified',
     });
     expect(byPath.get('GET /validator/api/merchantTransIDvalidationAPI.php')).toMatchObject({
-      implemented: false,
+      implemented: true,
+      fidelity: 'docs-only',
     });
   });
 

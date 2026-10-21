@@ -68,10 +68,10 @@
       "method": "POST",
       "path": "/remote-payment-gateway-1.0/api/dfs/check-out/refund/{merchantId}",
       "purpose": "Reverse a completed payment",
-      "implemented": false,
+      "implemented": true,
       "fidelity": "unverified",
       "sources": ["https://raw.githubusercontent.com/humayunshariarhimu/nagad-api/HEAD/README.md"],
-      "notes": "Out of scope; path shown for orientation only."
+      "notes": "Sealed {sensitiveData, signature}; payload {merchantId, paymentRefId, originalRequestDate, originalAmount, cancelAmount, referenceNo, referenceMessage}. referenceNo is the idempotency key. Response payload is simulator-shaped and compact (one RSA block). referenceMessage containing SIM:refund_fail simulates a decline."
     }
   ],
   "fields": [
@@ -295,6 +295,6 @@
     "The verify response shape is simulator-invented; only the status vocabulary is community-sourced.",
     "Crypto is real RSA with published fake keys (spec/fixtures): requests decrypted with the fake Nagad private key, signatures verified against each app's merchant public key, responses encrypted for the merchant. This proves message shape, never identity.",
     "Callback transport (browser GET redirect, no server POST) follows the community client code; send_ipn scenario actions skip with an event.",
-    "Refunds are out of scope."
+    "Refunds (full/partial) are implemented on the community path; verify responses add refundedAmount/refundStatus once refunded (simulator extension)."
   ]
 }

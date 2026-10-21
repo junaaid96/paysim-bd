@@ -4,7 +4,15 @@
 
 import { eq } from 'drizzle-orm';
 
-import type { DeliverCallbackInput, DeliveryRecord, TxnRecord } from '@paysim/core';
+import {
+  SystemClock,
+  processRefund,
+  type Clock,
+  type DeliverCallbackInput,
+  type DeliveryRecord,
+  type RefundResult,
+  type TxnRecord,
+} from '@paysim/core';
 
 import type { Db } from './db/client.js';
 import { transactions } from './db/schema.js';
@@ -38,6 +46,51 @@ export interface TxnOpsDeps {
   applyDeps: ApplyOverrideDeps;
   storage: StorageAdapter;
   deliver: (input: DeliverCallbackInput) => Promise<DeliveryRecord>;
+  /** Workspace clock for refund timestamps (defaults to wall-clock time). */
+  clock?: Clock;
+}
+
+export class RefundUnsupportedError extends Error {
+  constructor(gateway: string) {
+    super(`Refunds are not supported for ${gateway}`);
+    this.name = 'RefundUnsupportedError';
+  }
+}
+
+export interface DashboardRefundInput {
+  amountMinor: number;
+  reason?: string;
+  idempotencyKey?: string;
+  simulateFailure?: boolean;
+}
+
+/**
+ * Dashboard refund: same ledger + validation as the gateway refund APIs
+ * (completed payments only, no over-refund, idempotent on the key).
+ */
+export async function refundTxn(
+  deps: TxnOpsDeps,
+  txnId: string,
+  input: DashboardRefundInput,
+): Promise<RefundResult> {
+  const txn = await loadTxn(deps, txnId);
+  const plugin = deps.applyDeps.plugins.find((candidate) => candidate.name === txn.gateway);
+  const states = plugin?.refundableStates;
+  if (!states) throw new RefundUnsupportedError(txn.gateway);
+  return processRefund(
+    { stores: deps.engineDeps.stores, clock: deps.clock ?? new SystemClock() },
+    txn,
+    {
+      gateway: txn.gateway,
+      refundableStates: states,
+      amountMinor: input.amountMinor,
+      merchantRef: input.idempotencyKey ?? null,
+      reason: input.reason ?? 'Dashboard refund',
+      source: 'dashboard',
+      simulateFailure: input.simulateFailure === true,
+      refundIdPrefix: 'DBRF',
+    },
+  );
 }
 
 async function loadTxn(deps: TxnOpsDeps, txnId: string): Promise<TxnRecord> {

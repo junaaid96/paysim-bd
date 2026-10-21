@@ -47,6 +47,13 @@ function FeedRow({
   );
 }
 
+/** Refund events show the refund outcome instead of the payment state. */
+function feedState(row: ActivityRow): string {
+  if (row.type.endsWith('.refund.completed')) return 'refunded';
+  if (row.type.endsWith('.refund.failed')) return 'refund declined';
+  return row.state;
+}
+
 function ActivityRowView({ row }: { row: ActivityRow }): JSX.Element {
   return (
     <FeedRow
@@ -54,7 +61,7 @@ function ActivityRowView({ row }: { row: ActivityRow }): JSX.Element {
       title={row.type}
       gateway={row.gateway}
       amount={formatAmount(row.amount_minor, row.currency)}
-      state={row.state}
+      state={feedState(row)}
     />
   );
 }

@@ -12,6 +12,7 @@ import {
   type TxnRecord,
 } from './api';
 import { buildCurl, copyText, type HttpCapture } from './curl';
+import { RefundChip, RefundPanel } from './Refunds';
 import { GatewayMark, StateChip, formatAmount, gatewayName } from './ui';
 
 function formatTime(iso: string): string {
@@ -37,6 +38,8 @@ function CopyCurlButton({ capture }: { capture: HttpCapture }): JSX.Element {
 }
 
 function eventTone(type: string): string {
+  if (/refund\.(completed|failed)/.test(type))
+    return type.endsWith('failed') ? 'bg-red-400' : 'bg-violet-400';
   if (/success|completed|valid|delivered|ready/.test(type)) return 'bg-emerald-400';
   if (/fail|cancel|dead|expire|error/.test(type)) return 'bg-red-400';
   if (/scenario|clock/.test(type)) return 'bg-violet-400';
@@ -252,6 +255,7 @@ export default function TxnDetail({ txnId }: { txnId: string }): JSX.Element {
           </h2>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
             <StateChip state={txn.state} />
+            <RefundChip txn={txn} />
             <span>{gatewayName(txn.gateway)}</span>
           </div>
         </div>
@@ -271,6 +275,7 @@ export default function TxnDetail({ txnId }: { txnId: string }): JSX.Element {
           <dd className="text-zinc-300">{new Date(txn.createdAt).toLocaleString()}</dd>
         </div>
       </dl>
+      <RefundPanel txn={txn} />
       <ScenarioPicker txn={txn} />
       <div>
         <h3 className="eyebrow mb-3">Timeline · live</h3>

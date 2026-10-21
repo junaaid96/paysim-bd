@@ -63,3 +63,22 @@ export type {
   ScenarioDefinitionInput,
   ScenarioStep,
 } from './scenario.js';
+export {
+  REFUND_FAIL_MARKER,
+  RefundError,
+  findRefund,
+  generateRefundId,
+  processRefund,
+  refundIndexKey,
+  refundLedger,
+  refundStatusFor,
+} from './refund.js';
+export type {
+  RefundEntry,
+  RefundErrorCode,
+  RefundLedger,
+  RefundRequest,
+  RefundResult,
+  RefundSource,
+  RefundStatus,
+} from './refund.js';

@@ -189,3 +189,41 @@ export async function replayDelivery(txnId: string, deliveryId?: string): Promis
     await sendJson('POST', `/api/txns/${txnId}/replay`, { deliveryId }),
   );
 }
+
+export interface RefundEntryView {
+  refundId: string;
+  merchantRef: string | null;
+  amountMinor: number;
+  status: 'completed' | 'failed';
+  reason: string;
+  failureReason?: string;
+  source: 'api' | 'dashboard';
+  createdAt: string;
+}
+
+/** Dashboard refund; errors carry the API's human message. */
+export async function refundTxn(
+  txnId: string,
+  input: {
+    amountMinor: number;
+    reason?: string;
+    idempotencyKey: string;
+    simulateFailure?: boolean;
+  },
+): Promise<{ refund: RefundEntryView; replayed: boolean }> {
+  const res = await fetch(`/api/txns/${txnId}/refunds`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json().catch(() => null)) as {
+    refund?: RefundEntryView;
+    replayed?: boolean;
+    message?: string;
+    error?: string;
+  } | null;
+  if (!res.ok || !body?.refund) {
+    throw new Error(body?.message ?? body?.error ?? `Refund failed (HTTP ${res.status})`);
+  }
+  return { refund: body.refund, replayed: body.replayed === true };
+}

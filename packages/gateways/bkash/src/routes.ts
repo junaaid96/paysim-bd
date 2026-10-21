@@ -34,6 +34,7 @@ import {
 } from './builders.js';
 import { completeVerification } from './checkout.js';
 import { checkoutPage, errorPage, redirectPage } from './pages.js';
+import { mountBkashRefundRoutes } from './refund.js';
 import {
   CHECKOUT_ACTIONS,
   queryStatusFor,
@@ -525,6 +526,8 @@ export function createBkashRouter(
     const { kind, targetUrl } = await completeVerification({ ctx, txn, outcome });
     res.status(200).send(redirectPage({ kind, paymentId, targetUrl }));
   });
+
+  mountBkashRefundRoutes(router, ctx, authenticate);
 
   return router;
 }

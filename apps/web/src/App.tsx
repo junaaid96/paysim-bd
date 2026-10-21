@@ -30,6 +30,7 @@ import {
   gatewayName,
   useTheme,
 } from './ui';
+import { RefundChip } from './Refunds';
 
 type View = 'overview' | 'transactions' | 'gateways' | 'scenarios' | 'start';
 
@@ -349,7 +350,10 @@ function TxnTable({
                   {formatAmount(txn.amountMinor, txn.currency)}
                 </td>
                 <td className="px-4 py-2.5">
-                  <StateChip state={txn.state} />
+                  <span className="inline-flex flex-wrap items-center gap-1">
+                    <StateChip state={txn.state} />
+                    <RefundChip txn={txn} />
+                  </span>
                 </td>
                 {!compact && (
                   <td className="px-4 py-2.5 text-xs whitespace-nowrap text-zinc-500">

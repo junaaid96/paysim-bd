@@ -25,6 +25,7 @@ export default defineConfig({
           { text: 'Scenarios', link: '/concepts/scenarios' },
           { text: 'Fake clock', link: '/concepts/clock' },
           { text: 'Callbacks & SSRF', link: '/concepts/callbacks' },
+          { text: 'Refunds', link: '/concepts/refunds' },
         ],
       },
       {

@@ -13,6 +13,7 @@ import {
   parseMagicScenario,
   redactHeaders,
   redactValue,
+  refundLedger,
   ScenarioNotFoundError,
   type AppRecord,
   type PluginContext,
@@ -28,6 +29,7 @@ import { completeCheckout } from './checkout.js';
 import { NagadCryptoError, rsaDecrypt, rsaEncrypt, rsaSign, rsaVerify } from './crypto.js';
 import { loadFixtureKeys } from './fixtures.js';
 import { checkoutPage, errorPage, redirectPage } from './pages.js';
+import { mountNagadRefundRoutes } from './refund.js';
 import { CHECKOUT_ACTIONS, verifyStatusFor, type CheckoutAction } from './state-machine.js';
 import { asString, firstQueryParam, headersToRecord, isAbsoluteHttpUrl } from './util.js';
 
@@ -381,6 +383,7 @@ export function createNagadRouter(ctx: PluginContext): Router {
       type: 'nagad.verify.checked',
       data: { paymentReferenceId, status },
     });
+    const ledger = refundLedger(txn);
     // Response shape is simulator-invented (no source shows it); only the
     // status vocabulary is community-sourced.
     res.status(200).json({
@@ -391,6 +394,12 @@ export function createNagadRouter(ctx: PluginContext): Router {
       currency: txn.currency,
       status,
       ...(txn.metadata['trxId'] ? { trxId: asString(txn.metadata['trxId']) } : {}),
+      ...(ledger.refunds.length > 0
+        ? {
+            refundedAmount: formatAmountMinor(ledger.refundedMinor),
+            refundStatus: ledger.refundStatus,
+          }
+        : {}),
     });
   });
 
@@ -468,6 +477,8 @@ export function createNagadRouter(ctx: PluginContext): Router {
     const { status, targetUrl } = await completeCheckout({ ctx, txn, outcome });
     res.status(200).send(redirectPage({ status, paymentRefId, targetUrl }));
   });
+
+  mountNagadRefundRoutes(router, ctx, BASE, { open: openEnvelope, seal: sealEnvelope, fail });
 
   return router;
 }
