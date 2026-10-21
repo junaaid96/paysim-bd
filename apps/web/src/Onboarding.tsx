@@ -3,6 +3,7 @@ import { useState, type JSX } from 'react';
 
 import { createApp, fetchScenarios } from './api';
 import { copyText } from './curl';
+import { GatewayMark } from './ui';
 
 interface GatewayGuide {
   gateway: string;
@@ -43,16 +44,12 @@ function CopyButton({ text, label }: { text: string; label: string }): JSX.Eleme
   const [state, setState] = useState(label);
   const onClick = (): void => {
     void copyText(text).then((ok) => {
-      setState(ok ? 'Copied' : 'Copy failed');
+      setState(ok ? 'Copied ✓' : 'Copy failed');
       setTimeout(() => setState(label), 1500);
     });
   };
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="shrink-0 rounded border border-zinc-700 px-2 py-0.5 text-xs hover:bg-zinc-800"
-    >
+    <button type="button" onClick={onClick} className="btn shrink-0">
       {state}
     </button>
   );
@@ -75,7 +72,10 @@ function ScenarioNames({
   return (
     <span className="flex flex-wrap gap-1">
       {scenarios.data.map((scenario) => (
-        <code key={scenario.id} className="rounded bg-zinc-950 px-1.5 py-0.5 text-xs text-zinc-300">
+        <code
+          key={scenario.id}
+          className="rounded-md border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 text-[11px] text-zinc-300"
+        >
           SIM:{scenario.name}
         </code>
       ))}
@@ -91,16 +91,22 @@ function GatewayGuideRow({
   guide: GatewayGuide;
 }): JSX.Element {
   return (
-    <div className="rounded border border-zinc-800 bg-zinc-900 p-3">
-      <div className="font-medium">{guide.displayName}</div>
-      <code className="mt-1 block truncate text-xs text-zinc-400" title={guide.init}>
+    <div className="card flex flex-col p-4">
+      <div className="flex items-center gap-2.5">
+        <GatewayMark gateway={guide.gateway} />
+        <div className="font-semibold text-zinc-100">{guide.displayName}</div>
+      </div>
+      <code
+        className="mt-3 block truncate rounded-md bg-zinc-950 px-2 py-1.5 text-xs text-zinc-300"
+        title={guide.init}
+      >
         {guide.init}
       </code>
-      <p className="mt-2 text-xs text-zinc-500">
+      <p className="mt-3 text-xs text-zinc-500">
         Pick the outcome per payment with <code className="text-zinc-300">{guide.magicField}</code>{' '}
         = <code className="text-zinc-300">{guide.magicExample}</code>
       </p>
-      <div className="mt-1.5">
+      <div className="mt-2">
         <ScenarioNames workspace={workspace} gateway={guide.gateway} />
       </div>
     </div>
@@ -154,7 +160,7 @@ function demoCredentials(gateway: string): Record<string, string> {
   return { store_id: `testbox-${suffix}`, store_passwd: 'qwerty' };
 }
 
-function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
+export function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
   const queryClient = useQueryClient();
   const [gateway, setGateway] = useState('sslcommerz');
   const [name, setName] = useState('');
@@ -182,36 +188,42 @@ function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
   };
 
   return (
-    <div className="mt-2 rounded border border-zinc-800 bg-zinc-900 p-3 text-sm">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <label className="text-xs text-zinc-500">
-          gateway
-          <select
-            value={gateway}
-            onChange={(event) => {
-              setGateway(event.target.value);
+    <div className="card p-4 text-sm">
+      <div className="flex flex-wrap gap-1.5">
+        {(['sslcommerz', 'bkash', 'nagad'] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setGateway(id);
               setValues({});
             }}
-            className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-200"
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium ${
+              gateway === id
+                ? 'border-emerald-500 bg-emerald-950 text-emerald-300'
+                : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
+            }`}
           >
-            <option value="sslcommerz">SSLCommerz</option>
-            <option value="bkash">bKash</option>
-            <option value="nagad">Nagad</option>
-          </select>
-        </label>
+            <GatewayMark gateway={id} size="sm" />
+            {id === 'sslcommerz' ? 'SSLCommerz' : id === 'bkash' ? 'bKash' : 'Nagad'}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="text-xs text-zinc-500">
-          name
+          App name
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="demo-shop"
-            className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-200"
+            className="input"
           />
         </label>
-      </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {fields.map((field) => (
-          <label key={field.key} className="text-xs text-zinc-500">
+          <label
+            key={field.key}
+            className={`text-xs text-zinc-500 ${field.textarea ? 'sm:col-span-2' : ''}`}
+          >
             {field.label}
             {field.textarea ? (
               <textarea
@@ -219,7 +231,7 @@ function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
                 onChange={(event) => setValues({ ...values, [field.key]: event.target.value })}
                 rows={3}
                 placeholder="-----BEGIN PUBLIC KEY----- …"
-                className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 font-mono text-xs text-zinc-200"
+                className="input font-mono text-xs"
               />
             ) : (
               <input
@@ -227,32 +239,28 @@ function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
                 value={values[field.key] ?? ''}
                 onChange={(event) => setValues({ ...values, [field.key]: event.target.value })}
                 autoComplete="off"
-                className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-200"
+                className="input"
               />
             )}
-            {field.hint && <span className="text-zinc-600">{field.hint}</span>}
+            {field.hint && <span className="mt-1 block text-zinc-600">{field.hint}</span>}
           </label>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           disabled={busy || name.trim() === ''}
           onClick={submit}
-          className="rounded bg-amber-400 px-3 py-1 text-sm font-semibold text-black hover:bg-amber-300 disabled:opacity-50"
+          className="btn-primary"
         >
           {busy ? 'Creating…' : 'Create app'}
         </button>
-        <button
-          type="button"
-          onClick={fillDemo}
-          className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
-        >
+        <button type="button" onClick={fillDemo} className="btn">
           Fill demo values
         </button>
         {error && <span className="text-xs text-red-400">{error}</span>}
       </div>
-      <p className="mt-2 text-xs text-zinc-600">
+      <p className="mt-3 text-xs text-zinc-600">
         Fake credentials only — the API rejects anything that looks like a real key. A default app
         already exists for each gateway; create more when you need extra stores.
       </p>
@@ -260,64 +268,96 @@ function CreateAppForm({ workspace }: { workspace: string }): JSX.Element {
   );
 }
 
+export function QuickstartSnippet(): JSX.Element {
+  const base = window.location.origin;
+  const snippet = `curl -X POST ${base}/gwprocess/v4/api.php \\
+  -d store_id=testbox -d store_passwd=qwerty \\
+  -d total_amount=100.00 -d currency=BDT -d tran_id=DEMO-1 \\
+  -d product_category=demo \\
+  -d success_url=https://your-app.test/success \\
+  -d fail_url=https://your-app.test/fail \\
+  -d cancel_url=https://your-app.test/cancel \\
+  -d ipn_url=https://your-app.test/ipn \\
+  -d value_d=SIM:manual`;
+  return (
+    <section className="card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
+        <div>
+          <div className="font-semibold text-zinc-100">Your first payment</div>
+          <p className="text-xs text-zinc-500">
+            Open the returned <code>GatewayPageURL</code>, pick Success / Fail / Cancel, then
+            validate with <code>/validator/api/validationserverAPI.php</code>.
+          </p>
+        </div>
+        <CopyButton text={snippet} label="Copy curl" />
+      </div>
+      <pre className="overflow-x-auto bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-300">
+        {snippet}
+      </pre>
+    </section>
+  );
+}
+
+const STEPS = [
+  {
+    title: 'Point your app here',
+    body: 'Swap your gateway base URL for this simulator’s origin. Default fake stores already exist for every gateway.',
+  },
+  {
+    title: 'Pick an outcome',
+    body: 'Add a SIM:<name> marker to the payment (success, fail, cancel, late IPN, amount mismatch…) or leave it on manual.',
+  },
+  {
+    title: 'Watch & replay',
+    body: 'Follow every request and callback live, replay IPNs, override scenarios and fast-forward the fake clock.',
+  },
+];
+
 export default function Onboarding({ workspace }: { workspace: string }): JSX.Element {
   const baseUrl = window.location.origin;
   return (
-    <div className="mt-4 space-y-4">
-      <section className="rounded border border-zinc-800 bg-zinc-900 p-4">
-        <h2 className="font-semibold">What is PaySim BD?</h2>
-        <p className="mt-1 max-w-3xl text-sm text-zinc-400">
-          A simulator that imitates Bangladeshi payment gateways — SSLCommerz, bKash and Nagad — for
-          development and testing. Point your app&apos;s gateway base URL here instead of the real
-          sandbox, then drive success, failure, cancel and timeout flows on demand and inspect every
-          request below. No real money or credentials ever touch this service.
+    <div className="space-y-6">
+      <section className="card relative overflow-hidden p-6">
+        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="eyebrow">Get started</div>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-100">
+          Test SSLCommerz, bKash and Nagad flows without a real sandbox
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm text-zinc-400">
+          PaySim BD imitates the gateways&apos; APIs and hosted checkout pages. Drive success,
+          failure, cancel and timeout flows on demand and inspect every request. No real money or
+          credentials ever touch this service.
         </p>
-        <ol className="mt-3 grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-          <li className="rounded bg-zinc-950 p-2.5">
-            <span className="font-semibold text-amber-400">1.</span>{' '}
-            <span className="text-zinc-300">
-              Set your app&apos;s gateway base URL to this page&apos;s origin and create a gateway
-              app below.
-            </span>
-          </li>
-          <li className="rounded bg-zinc-950 p-2.5">
-            <span className="font-semibold text-amber-400">2.</span>{' '}
-            <span className="text-zinc-300">
-              Send a payment init with a <code>SIM:&lt;name&gt;</code> marker to choose its outcome.
-            </span>
-          </li>
-          <li className="rounded bg-zinc-950 p-2.5">
-            <span className="font-semibold text-amber-400">3.</span>{' '}
-            <span className="text-zinc-300">
-              Watch the transaction timeline update live; replay callbacks and bend time with the
-              fake clock.
-            </span>
-          </li>
+        <ol className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-black">
+                {index + 1}
+              </span>
+              <div className="mt-2 text-sm font-semibold text-zinc-100">{step.title}</div>
+              <p className="mt-1 text-xs text-zinc-500">{step.body}</p>
+            </li>
+          ))}
         </ol>
       </section>
 
-      <section className="rounded border border-zinc-800 bg-zinc-900 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-semibold">Connect your app</h2>
-          <code className="rounded bg-zinc-950 px-2 py-0.5 text-sm text-zinc-200">{baseUrl}</code>
+      <section>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-semibold text-zinc-100">Connect your app</h2>
+          <code className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm text-zinc-200">
+            {baseUrl}
+          </code>
           <CopyButton text={baseUrl} label="Copy base URL" />
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {GUIDES.map((guide) => (
             <GatewayGuideRow key={guide.gateway} workspace={workspace} guide={guide} />
           ))}
         </div>
         <p className="mt-2 text-xs text-zinc-600">
           Unknown SIM: names fail loudly so typos never pass silently. Full request/response shapes
-          live in each gateway&apos;s spec — see the docs site linked in the README.
+          live in each gateway&apos;s spec — see the docs linked in the README.
         </p>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
-          New gateway app
-        </h2>
-        <CreateAppForm workspace={workspace} />
       </section>
     </div>
   );

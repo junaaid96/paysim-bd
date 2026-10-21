@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type JSX } from 'react';
+import { useState, type JSX, type ReactNode } from 'react';
 
 import {
   attachTxnScenario,
@@ -12,28 +12,11 @@ import {
   type TxnRecord,
 } from './api';
 import { buildCurl, copyText, type HttpCapture } from './curl';
+import { GatewayMark, StateChip, formatAmount, gatewayName } from './ui';
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleTimeString();
-}
-
-function formatAmount(minor: number, currency: string): string {
-  return `${(minor / 100).toFixed(2)} ${currency}`;
-}
-
-function StateChip({ state }: { state: string }): JSX.Element {
-  const color =
-    state === 'valid' || state === 'completed' || state === 'success'
-      ? 'bg-emerald-900 text-emerald-300'
-      : state === 'initiated'
-        ? 'bg-zinc-700 text-zinc-200'
-        : state === 'verified' || state === 'checkout'
-          ? 'bg-sky-900 text-sky-300'
-          : state === 'failed' || state === 'cancelled' || state === 'expired'
-            ? 'bg-red-900 text-red-300'
-            : 'bg-zinc-700 text-zinc-200';
-  return <span className={`rounded px-2 py-0.5 text-xs font-semibold ${color}`}>{state}</span>;
 }
 
 function CopyCurlButton({ capture }: { capture: HttpCapture }): JSX.Element {
@@ -47,36 +30,51 @@ function CopyCurlButton({ capture }: { capture: HttpCapture }): JSX.Element {
     });
   };
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded border border-zinc-700 px-2 py-0.5 text-xs hover:bg-zinc-800"
-    >
+    <button type="button" onClick={onClick} className="btn">
       {label}
     </button>
+  );
+}
+
+function eventTone(type: string): string {
+  if (/success|completed|valid|delivered|ready/.test(type)) return 'bg-emerald-400';
+  if (/fail|cancel|dead|expire|error/.test(type)) return 'bg-red-400';
+  if (/scenario|clock/.test(type)) return 'bg-violet-400';
+  return 'bg-zinc-500';
+}
+
+function TimelineItem({ dot, children }: { dot: string; children: ReactNode }): JSX.Element {
+  return (
+    <li className="relative pb-4 pl-6 last:pb-0">
+      <span className="absolute top-0 bottom-0 left-[5px] w-px bg-zinc-800" />
+      <span
+        className={`absolute top-3 left-0 h-[11px] w-[11px] rounded-full ring-4 ring-zinc-950 ${dot}`}
+      />
+      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">{children}</div>
+    </li>
   );
 }
 
 function EventRow({ event }: { event: EventRecord }): JSX.Element {
   const http = (event.data['http'] ?? null) as HttpCapture | null;
   return (
-    <li className="rounded border border-zinc-800 bg-zinc-900 p-2">
+    <TimelineItem dot={eventTone(event.type)}>
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm">
-          <span className="text-zinc-500">{formatTime(event.createdAt)}</span>{' '}
-          <code className="text-zinc-200">{event.type}</code>
+        <div className="min-w-0 text-sm">
+          <code className="text-zinc-100">{event.type}</code>
+          <div className="text-[11px] text-zinc-500">{formatTime(event.createdAt)}</div>
         </div>
         {http ? <CopyCurlButton capture={http} /> : null}
       </div>
-      <details className="mt-1">
-        <summary className="cursor-pointer text-xs text-zinc-500">
-          payload (secrets redacted)
+      <details className="mt-2">
+        <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-300">
+          Payload (secrets redacted)
         </summary>
-        <pre className="mt-1 overflow-auto rounded bg-zinc-950 p-2 text-xs text-zinc-300">
+        <pre className="mt-2 max-h-72 overflow-auto rounded-md bg-zinc-950 p-2 text-xs text-zinc-300">
           {JSON.stringify(event.data, null, 2)}
         </pre>
       </details>
-    </li>
+    </TimelineItem>
   );
 }
 
@@ -102,9 +100,9 @@ function ReplayButton({ txnId, deliveryId }: { txnId: string; deliveryId: string
       type="button"
       onClick={onClick}
       title="Re-POST this callback payload as a fresh attempt"
-      className="rounded border border-zinc-700 px-2 py-0.5 text-xs hover:bg-zinc-800"
+      className="btn"
     >
-      {label}
+      ↻ {label}
     </button>
   );
 }
@@ -130,38 +128,35 @@ function ScenarioPicker({ txn }: { txn: TxnRecord }): JSX.Element {
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-      <label className="text-zinc-500">
-        scenario override:{' '}
-        <select
-          value={txn.scenarioOverrideId ?? ''}
-          disabled={busy}
-          onChange={(event) => attach(event.target.value === '' ? null : event.target.value)}
-          className="rounded border border-zinc-700 bg-zinc-950 px-1 py-0.5 text-zinc-200 disabled:opacity-50"
-        >
-          <option value="">none{current ? '' : ' (as attached at init)'}</option>
-          {(scenarios.data ?? []).map((scenario) => (
-            <option key={scenario.id} value={scenario.id}>
-              {scenario.name}
-              {scenario.global ? '' : ' (workspace)'} · {scenario.definition.steps.length} steps
-            </option>
-          ))}
-        </select>
-      </label>
-      {txn.scenarioOverrideId && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => attach(null)}
-          className="rounded border border-zinc-700 px-2 py-0.5 hover:bg-zinc-800 disabled:opacity-50"
-        >
-          Detach
-        </button>
-      )}
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-xs">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="min-w-[14rem] flex-1 text-zinc-500">
+          Scenario override
+          <select
+            value={txn.scenarioOverrideId ?? ''}
+            disabled={busy}
+            onChange={(event) => attach(event.target.value === '' ? null : event.target.value)}
+            className="input"
+          >
+            <option value="">none{current ? '' : ' (as attached at init)'}</option>
+            {(scenarios.data ?? []).map((scenario) => (
+              <option key={scenario.id} value={scenario.id}>
+                {scenario.name}
+                {scenario.global ? '' : ' (workspace)'} · {scenario.definition.steps.length} steps
+              </option>
+            ))}
+          </select>
+        </label>
+        {txn.scenarioOverrideId && (
+          <button type="button" disabled={busy} onClick={() => attach(null)} className="btn">
+            Detach
+          </button>
+        )}
+      </div>
       {current?.definition.description && (
-        <span className="text-zinc-500">{current.definition.description}</span>
+        <p className="mt-2 text-zinc-500">{current.definition.description}</p>
       )}
-      {error && <span className="text-red-400">{error}</span>}
+      {error && <p className="mt-2 text-red-400">{error}</p>}
     </div>
   );
 }
@@ -175,25 +170,43 @@ function DeliveryRow({
 }): JSX.Element {
   const ok = delivery.status === 'delivered';
   return (
-    <li className="rounded border border-zinc-800 bg-zinc-900 p-2">
+    <TimelineItem dot={ok ? 'bg-emerald-400' : 'bg-red-400'}>
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm">
-          <span className="text-zinc-500">{formatTime(delivery.createdAt)}</span>{' '}
-          <code className="text-zinc-200">
-            {delivery.kind} → {delivery.targetUrl}
+        <div className="min-w-0 text-sm">
+          <code className="block truncate text-zinc-100">
+            {delivery.kind.toUpperCase()} → {delivery.targetUrl}
           </code>
+          <div className="text-[11px] text-zinc-500">{formatTime(delivery.createdAt)}</div>
         </div>
         <ReplayButton txnId={txnId} deliveryId={delivery.id} />
       </div>
-      <div className="mt-1 flex flex-wrap gap-2 text-xs text-zinc-400">
-        <span className={ok ? 'text-emerald-400' : 'text-red-400'}>{delivery.status}</span>
-        <span>attempt #{delivery.attemptNo}</span>
-        {delivery.latencyMs !== null && <span>{delivery.latencyMs} ms</span>}
-        {delivery.responseStatus !== null && <span>HTTP {delivery.responseStatus}</span>}
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+        <span
+          className={`rounded-full px-2 py-0.5 font-semibold ${
+            ok ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'
+          }`}
+        >
+          {delivery.status}
+        </span>
+        <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-zinc-400">
+          attempt #{delivery.attemptNo}
+        </span>
+        {delivery.latencyMs !== null && (
+          <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-zinc-400">
+            {delivery.latencyMs} ms
+          </span>
+        )}
+        {delivery.responseStatus !== null && (
+          <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-zinc-400">
+            HTTP {delivery.responseStatus}
+          </span>
+        )}
       </div>
-      <details className="mt-1">
-        <summary className="cursor-pointer text-xs text-zinc-500">request / response</summary>
-        <pre className="mt-1 overflow-auto rounded bg-zinc-950 p-2 text-xs text-zinc-300">
+      <details className="mt-2">
+        <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-300">
+          Request / response
+        </summary>
+        <pre className="mt-2 max-h-72 overflow-auto rounded-md bg-zinc-950 p-2 text-xs text-zinc-300">
           {JSON.stringify(
             {
               requestBody: delivery.requestBody,
@@ -206,7 +219,7 @@ function DeliveryRow({
           )}
         </pre>
       </details>
-    </li>
+    </TimelineItem>
   );
 }
 
@@ -230,29 +243,39 @@ export default function TxnDetail({ txnId }: { txnId: string }): JSX.Element {
   ].sort((a, b) => (a.at < b.at ? -1 : 1));
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-lg font-semibold">
-          <code>{txn.gatewayTxnId ?? txn.id}</code>
-        </h2>
-        <StateChip state={txn.state} />
-        <span className="text-sm text-zinc-400">
-          {txn.gateway} · {formatAmount(txn.amountMinor, txn.currency)}
-        </span>
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <GatewayMark gateway={txn.gateway} />
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-lg font-semibold text-zinc-100">
+            <code>{txn.gatewayTxnId ?? txn.id}</code>
+          </h2>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+            <StateChip state={txn.state} />
+            <span>{gatewayName(txn.gateway)}</span>
+          </div>
+        </div>
+        <div className="text-xl font-semibold text-zinc-100 tabular-nums">
+          {formatAmount(txn.amountMinor, txn.currency)}
+        </div>
       </div>
-      <dl className="mt-2 grid grid-cols-2 gap-1 text-xs text-zinc-400">
-        <dt>Session</dt>
-        <dd className="truncate">
-          <code>{txn.gatewaySessionKey ?? '—'}</code>
-        </dd>
-        <dt>Created</dt>
-        <dd>{new Date(txn.createdAt).toLocaleString()}</dd>
+      <dl className="grid grid-cols-1 gap-2 rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-xs sm:grid-cols-2">
+        <div>
+          <dt className="text-zinc-500">Session</dt>
+          <dd className="truncate text-zinc-300">
+            <code>{txn.gatewaySessionKey ?? '—'}</code>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-zinc-500">Created</dt>
+          <dd className="text-zinc-300">{new Date(txn.createdAt).toLocaleString()}</dd>
+        </div>
       </dl>
       <ScenarioPicker txn={txn} />
-      <h3 className="mt-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">
-        Timeline (live)
-      </h3>
-      <ul className="mt-2 space-y-2">{timeline.map((entry) => entry.node)}</ul>
+      <div>
+        <h3 className="eyebrow mb-3">Timeline · live</h3>
+        <ul>{timeline.map((entry) => entry.node)}</ul>
+      </div>
     </div>
   );
 }
