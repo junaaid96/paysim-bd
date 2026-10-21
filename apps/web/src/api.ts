@@ -100,9 +100,13 @@ export async function fetchApps(workspace: string): Promise<AppRecord[]> {
 }
 
 export async function fetchTxns(workspace: string): Promise<TxnRecord[]> {
-  return z
-    .array(TxnRecordSchema)
-    .parse(await getJson(`/api/txns?workspace=${workspace}&limit=100`));
+  const path = `/api/txns?workspace=${workspace}&limit=100`;
+  const res = await fetch(path);
+  // A workspace with no gateway apps yet is unknown to the API: for a new
+  // user that simply means "no transactions", not an error.
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`GET ${path}: HTTP ${res.status}`);
+  return z.array(TxnRecordSchema).parse(await res.json());
 }
 
 export async function fetchTxnDetail(id: string): Promise<TxnDetail> {
