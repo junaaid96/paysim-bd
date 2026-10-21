@@ -262,11 +262,22 @@ export function createDrizzleStores(deps: DrizzleStoresDeps): PluginStores {
       return row ? toTxn(row, await workspaceKey(row.workspaceId)) : null;
     },
 
-    async findTransactionByGatewayTxnId(gateway: string, gatewayTxnId: string) {
+    async findTransactionByGatewayTxnId(
+      gateway: string,
+      gatewayTxnId: string,
+      gatewayAppId?: string,
+    ) {
       const rows = await db
         .select()
         .from(transactions)
-        .where(and(eq(transactions.gateway, gateway), eq(transactions.gatewayTxnId, gatewayTxnId)))
+        .where(
+          and(
+            eq(transactions.gateway, gateway),
+            eq(transactions.gatewayTxnId, gatewayTxnId),
+            gatewayAppId === undefined ? undefined : eq(transactions.gatewayAppId, gatewayAppId),
+          ),
+        )
+        .orderBy(desc(transactions.createdAt))
         .limit(1);
       const row = rows[0];
       return row ? toTxn(row, await workspaceKey(row.workspaceId)) : null;

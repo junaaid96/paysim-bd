@@ -45,6 +45,20 @@ describe('sslcommerz routes', () => {
     return { sessionkey: String(res.body.sessionkey) };
   }
 
+  it('scopes tran_id uniqueness to the store, like the real gateway', async () => {
+    fakes.stores.seedApp({
+      id: 'other-store',
+      credentials: { store_id: 'otherbox', store_passwd: 'other' },
+    });
+    await initOk();
+    const sameStore = await request(app).post('/gwprocess/v4/api.php').send(INIT);
+    expect(sameStore.body.failedreason).toBe('Duplicate tran_id');
+    const otherStore = await request(app)
+      .post('/gwprocess/v4/api.php')
+      .send({ ...INIT, store_id: 'otherbox', store_passwd: 'other' });
+    expect(otherStore.body.status).toBe('SUCCESS');
+  });
+
   it('inits a session over JSON and urlencoded bodies', async () => {
     const json = await request(app).post('/gwprocess/v4/api.php').send(INIT);
     expect(json.body.sessionkey).toMatch(/^[0-9A-F]{32}$/);

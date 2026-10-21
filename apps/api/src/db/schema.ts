@@ -105,8 +105,9 @@ export const transactions = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    // NULL gatewayTxnIds never collide (Postgres treats NULLs as distinct).
-    uniqueIndex('transactions_gateway_ref_unique').on(t.gateway, t.gatewayTxnId),
+    // Merchant references are unique per gateway app (store), like the real
+    // gateways. NULL gatewayTxnIds never collide (NULLs are distinct).
+    uniqueIndex('transactions_app_ref_unique').on(t.gateway, t.gatewayAppId, t.gatewayTxnId),
     uniqueIndex('transactions_gateway_session_unique').on(t.gateway, t.gatewaySessionKey),
     index('transactions_workspace_list_idx').on(t.workspaceId, t.createdAt),
   ],

@@ -167,6 +167,36 @@ maybe('drizzle stores integration', () => {
     expect(small.data).toEqual({ a: 1 });
   });
 
+  it('scopes merchant references (tran_id) to the gateway app', async () => {
+    const workspace = await ensureDefaultWorkspace(db);
+    const make = (name: string, storeId: string) =>
+      queries.createApp({
+        workspaceId: workspace.id,
+        gateway: 'sslcommerz',
+        name,
+        credentials: { store_id: storeId, store_passwd: 'x' },
+      });
+    const a = await make('A', 'scope-a');
+    const b = await make('B', 'scope-b');
+    const base = {
+      workspaceId: workspace.id,
+      gateway: 'sslcommerz',
+      state: 'initiated',
+      amountMinor: 100,
+      currency: 'BDT',
+      gatewayTxnId: 'SAME-REF',
+    };
+    const ta = await stores.createTransaction({ ...base, gatewayAppId: a.id });
+    const tb = await stores.createTransaction({ ...base, gatewayAppId: b.id });
+    expect((await stores.findTransactionByGatewayTxnId('sslcommerz', 'SAME-REF', a.id))?.id).toBe(
+      ta.id,
+    );
+    expect((await stores.findTransactionByGatewayTxnId('sslcommerz', 'SAME-REF', b.id))?.id).toBe(
+      tb.id,
+    );
+    await expect(stores.createTransaction({ ...base, gatewayAppId: a.id })).rejects.toThrow();
+  });
+
   it('shares kv entries and hides expired ones', async () => {
     const kv = stores.kv;
     if (!kv) throw new Error('expected kv');

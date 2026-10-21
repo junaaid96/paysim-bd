@@ -160,7 +160,7 @@ export function createNagadRouter(ctx: PluginContext): Router {
         return;
       }
       const ref = orderRef(merchantId, orderId);
-      const duplicate = await ctx.stores.findTransactionByGatewayTxnId(GATEWAY, ref);
+      const duplicate = await ctx.stores.findTransactionByGatewayTxnId(GATEWAY, ref, app.id);
       if (duplicate) {
         res.status(400).json(fail(`Duplicate orderId for merchant ${merchantId}: ${orderId}.`));
         return;

@@ -202,7 +202,15 @@ export interface PluginStores {
   createTransaction(input: CreateTxnInput): Promise<TxnRecord>;
   getTransaction(id: string): Promise<TxnRecord | null>;
   findTransactionBySession(gateway: string, sessionKey: string): Promise<TxnRecord | null>;
-  findTransactionByGatewayTxnId(gateway: string, gatewayTxnId: string): Promise<TxnRecord | null>;
+  /**
+   * Merchant references (SSLCommerz tran_id, Nagad orderId) are unique per
+   * gateway app, like the real gateways; pass gatewayAppId to scope the lookup.
+   */
+  findTransactionByGatewayTxnId(
+    gateway: string,
+    gatewayTxnId: string,
+    gatewayAppId?: string,
+  ): Promise<TxnRecord | null>;
   /** Lookup by a metadata key (e.g. val_id, paymentId) for verify/query APIs. */
   findTransactionByMetadata(gateway: string, key: string, value: string): Promise<TxnRecord | null>;
   /** Updates state (+ optional metadata patch) and writes a state event. */
