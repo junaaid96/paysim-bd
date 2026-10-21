@@ -45,19 +45,19 @@ deterministic stand-in you fully control.
 
 ## Screenshots
 
-| Dark | Light |
-| --- | --- |
-| ![Overview (dark)](docs/screenshots/overview-dark.png) | ![Overview (light)](docs/screenshots/overview-light.png) |
-| ![Transactions (dark)](docs/screenshots/transactions-dark.png) | ![Transactions (light)](docs/screenshots/transactions-light.png) |
+| Dark                                                                       | Light                                                                        |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| ![Overview (dark)](docs/screenshots/overview-dark.png)                     | ![Overview (light)](docs/screenshots/overview-light.png)                     |
+| ![Transactions (dark)](docs/screenshots/transactions-dark.png)             | ![Transactions (light)](docs/screenshots/transactions-light.png)             |
 | ![Transaction detail (dark)](docs/screenshots/transaction-detail-dark.png) | ![Transaction detail (light)](docs/screenshots/transaction-detail-light.png) |
-| ![Gateways (dark)](docs/screenshots/gateways-dark.png) | ![Gateways (light)](docs/screenshots/gateways-light.png) |
-| ![Scenarios & clock (dark)](docs/screenshots/scenarios-dark.png) | ![Scenarios & clock (light)](docs/screenshots/scenarios-light.png) |
-| ![Get started (dark)](docs/screenshots/start-dark.png) | ![Get started (light)](docs/screenshots/start-light.png) |
+| ![Gateways (dark)](docs/screenshots/gateways-dark.png)                     | ![Gateways (light)](docs/screenshots/gateways-light.png)                     |
+| ![Scenarios & clock (dark)](docs/screenshots/scenarios-dark.png)           | ![Scenarios & clock (light)](docs/screenshots/scenarios-light.png)           |
+| ![Get started (dark)](docs/screenshots/start-dark.png)                     | ![Get started (light)](docs/screenshots/start-light.png)                     |
 
 Simulated hosted checkout pages (clearly labelled as a simulator):
 
-| SSLCommerz | bKash |
-| --- | --- |
+| SSLCommerz                                                                 | bKash                                                            |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | ![SSLCommerz simulated checkout](docs/screenshots/checkout-sslcommerz.png) | ![bKash simulated checkout](docs/screenshots/checkout-bkash.png) |
 
 ## Tech stack
