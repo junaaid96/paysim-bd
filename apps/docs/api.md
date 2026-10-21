@@ -12,12 +12,13 @@ Base path `/api`. Mutating gateway traffic lives on the gateway paths; this API 
 
 ## Transactions
 
-| Method | Path                               | Body                                  |
-| ------ | ---------------------------------- | ------------------------------------- |
-| GET    | `/api/txns?gateway=&state=&limit=` | —                                     |
-| GET    | `/api/txns/:id`                    | Detail: txn + events + deliveries     |
-| POST   | `/api/txns/:id/scenario`           | `{scenarioId}` override (null clears) |
-| POST   | `/api/txns/:id/replay`             | `{deliveryId?}` re-queue a callback   |
+| Method | Path                               | Body                                                                                                               |
+| ------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/txns?gateway=&state=&limit=` | —                                                                                                                  |
+| GET    | `/api/txns/:id`                    | Detail: txn + events + deliveries                                                                                  |
+| POST   | `/api/txns/:id/scenario`           | `{scenarioId}` override (null clears)                                                                              |
+| POST   | `/api/txns/:id/replay`             | `{deliveryId?}` re-queue a callback                                                                                |
+| POST   | `/api/txns/:id/refunds`            | `{amountMinor, reason?, idempotencyKey?, simulateFailure?}` full/partial refund ([details](./concepts/refunds.md)) |
 
 ## Scenarios & clock
 

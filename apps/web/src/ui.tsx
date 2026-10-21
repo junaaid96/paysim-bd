@@ -72,6 +72,8 @@ export function stateTone(state: string): string {
   if (state === 'verified' || state === 'checkout') return 'bg-sky-900 text-sky-300';
   if (state === 'failed' || state === 'cancelled' || state === 'expired')
     return 'bg-red-900 text-red-300';
+  if (state === 'refunded') return 'bg-violet-900 text-violet-300';
+  if (state === 'refund declined') return 'bg-red-900 text-red-300';
   if (state === 'pending' || state === 'unattempted') return 'bg-amber-950 text-amber-300';
   return 'bg-zinc-800 text-zinc-300';
 }

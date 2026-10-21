@@ -133,6 +133,7 @@ export async function bootApp(options: BootOptions): Promise<BootedApp> {
       applyDeps: { db, stores, logger: adaptPino(logger), kick, engine, plugins },
       storage,
       deliver: deliverCallback,
+      clock,
     };
     const app = createApp({
       env,

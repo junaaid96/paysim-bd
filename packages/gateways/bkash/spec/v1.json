@@ -72,6 +72,24 @@
       "fidelity": "unverified",
       "sources": [],
       "notes": "Simulator-only; see GET /bkash/checkout."
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/refund/payment/transaction",
+      "purpose": "Refund a completed payment (full or partial)",
+      "implemented": true,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.bka.sh/docs/refund-transaction"],
+      "notes": "Body {paymentId, trxId, refundAmount, sku, reason}. Settles instantly. Optional Idempotency-Key header is a simulator extension. Over-refund/duplicate error codes are simulator choices. reason containing SIM:refund_fail simulates a decline (2003)."
+    },
+    {
+      "method": "POST",
+      "path": "/v2/tokenized-checkout/refund/payment/status",
+      "purpose": "List refunds of a payment",
+      "implemented": true,
+      "fidelity": "docs-only",
+      "sources": ["https://developer.bka.sh/docs/refund-status"],
+      "notes": "Body {paymentId, trxId}; returns refundTransactions[]."
     }
   ],
   "fields": [
@@ -483,7 +501,7 @@
     "Execute pre-condition rejections (2060/2056) do not burn the paymentId; only a completed execution does (2062). Docs say a paymentId 'cannot be reused after an execute attempt regardless of the result' — the simulator reads 'attempt' as an accepted execution (docs-only interpretation).",
     "The grant-token rate limit (2/hour) is not enforced; the token registry is in-memory per process, so restarts invalidate tokens.",
     "productionHosts is empty: no v2 production host is published in the consulted docs.",
-    "Agreements, auth & capture, refunds and search are out of scope; coupon/agreement/serviceFee response fields are omitted.",
+    "Agreements, auth & capture and search are out of scope; coupon/agreement/serviceFee response fields are omitted.",
     "Token values (sim_id_*, sim_rt_*), trxId/payerAccount fixtures and the '0011' paymentId infix are simulator choices; shapes follow the doc samples."
   ]
 }

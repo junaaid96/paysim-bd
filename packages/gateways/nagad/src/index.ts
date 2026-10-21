@@ -45,6 +45,7 @@ export {
   rsaSign,
   rsaVerify,
 } from './crypto.js';
+import { REFUNDABLE_STATES } from './refund.js';
 export { loadFixtureKeys } from './fixtures.js';
 
 export const nagadPlugin: GatewayPlugin = {
@@ -71,6 +72,7 @@ export const nagadPlugin: GatewayPlugin = {
     return { ok: true, value: { ...parsed.data } };
   },
   builtinScenarios: BUILTIN_SCENARIOS,
+  refundableStates: REFUNDABLE_STATES,
   isTerminalState(state: string): boolean {
     return isTerminal(state as NagadState);
   },

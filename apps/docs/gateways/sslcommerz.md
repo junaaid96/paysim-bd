@@ -6,11 +6,12 @@ Session init + hosted payment page + server-to-server IPN.
 
 ## Endpoints
 
-| Method   | Path                                     | Notes                                                                                                                                                   |
-| -------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST     | `/gwprocess/v4/api.php`                  | Init. Accepts JSON or form. Gateway-shaped failures answer HTTP 200 with `status: FAILED`; only malformed bodies get HTTP 400                           |
-| GET/POST | `/gwprocess/v4/gw.php`                   | Mock payment page (`?Q=PAY&SESSIONKEY=…`), Success/Fail/Cancel buttons                                                                                  |
-| GET      | `/validator/api/validationserverAPI.php` | Validation (`format=json&val_id&store_id&store_passwd`). First check returns `VALID`, repeats return `VALIDATED`, unknown returns `INVALID_TRANSACTION` |
+| Method   | Path                                              | Notes                                                                                                                                                     |
+| -------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST     | `/gwprocess/v4/api.php`                           | Init. Accepts JSON or form. Gateway-shaped failures answer HTTP 200 with `status: FAILED`; only malformed bodies get HTTP 400                             |
+| GET/POST | `/gwprocess/v4/gw.php`                            | Mock payment page (`?Q=PAY&SESSIONKEY=…`), Success/Fail/Cancel buttons                                                                                    |
+| GET      | `/validator/api/validationserverAPI.php`          | Validation (`format=json&val_id&store_id&store_passwd`). First check returns `VALID`, repeats return `VALIDATED`, unknown returns `INVALID_TRANSACTION`   |
+| GET      | `/validator/api/merchantTransIDvalidationAPI.php` | Refund initiate (`bank_tran_id&refund_amount&refund_remarks&refund_trans_id`) and refund status (`refund_ref_id`) — see [refunds](../concepts/refunds.md) |
 
 ## Driving flows
 

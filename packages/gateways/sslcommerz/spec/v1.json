@@ -61,11 +61,11 @@
     {
       "method": "GET",
       "path": "/validator/api/merchantTransIDvalidationAPI.php",
-      "purpose": "Query by sessionkey/tran_id; refund initiate + refund status",
-      "implemented": false,
+      "purpose": "Refund initiate (bank_tran_id + refund_amount) and refund status (refund_ref_id)",
+      "implemented": true,
       "fidelity": "docs-only",
       "sources": ["https://developer.sslcommerz.com/doc/v4/"],
-      "notes": "Documented officially. Planned for a later phase."
+      "notes": "Refund initiate + refund status implemented (format=json). Refunds settle instantly; refund_trans_id (or refe_id) is the idempotency key; refund_remarks containing SIM:refund_fail simulates a decline. Transaction query by sessionkey/tran_id is not implemented yet."
     },
     {
       "method": "POST",

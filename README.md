@@ -33,13 +33,18 @@ deterministic stand-in you fully control.
   bKash and Nagad), matching the official request/response shapes.
 - **Scenario engine** — choose the outcome of each payment (success, failure,
   cancel, pending, timeout) instead of hoping the sandbox cooperates.
+- **Refunds** — full and partial refunds on all three gateways through their
+  own refund API shapes (SSLCommerz refund + refund status, bKash refund +
+  refund status, Nagad sealed refund) or one click in the dashboard. Over-refunds
+  are blocked, retries are idempotent, and `SIM:refund_fail` simulates a
+  declined refund.
 - **Fake clock** — fast-forward expiries and delayed callbacks.
 - **Callback / IPN delivery** with retries, plus an **SSRF guard** so the hosted
   playground can never be used to reach private networks.
 - **Request timeline** — every inbound request and outbound callback is
   recorded, with secrets redacted before storage.
 - **Large-body storage** — bodies over 16 KB spill to object storage (local disk
-  or any S3-compatible bucket such as Cloudflare R2).
+  or any S3-compatible bucket; the hosted playground uses Neon object storage).
 - **Run anywhere** — Docker Compose locally, or the hosted one-deploy (Vercel +
   Neon).
 
@@ -66,7 +71,7 @@ One run through the simulator, from setup to a settled payment.
 | ---------- | ---------------------------------------------------------- |
 | API        | Node.js 22+, Express 5, TypeScript, Zod, Pino              |
 | Database   | PostgreSQL 17 (Neon when hosted), Drizzle ORM + migrations |
-| Storage    | Local filesystem or S3-compatible (Cloudflare R2)          |
+| Storage    | Local filesystem or S3-compatible (Neon object storage)    |
 | Dashboard  | React 19, Vite, TanStack Query, Tailwind CSS 4             |
 | Tooling    | pnpm workspaces, Vitest, Supertest, ESLint, Prettier       |
 | Deployment | Docker Compose (local), Vercel + Neon (hosted playground)  |
@@ -78,6 +83,10 @@ One run through the simulator, from setup to a settled payment.
 | SSLCommerz | Session init + hosted page + IPN      | docs-only  | `value_d` = `SIM:<name>`               |
 | bKash      | Tokenized checkout (v2, no agreement) | docs-only  | `merchantInvoiceNumber` = `SIM:<name>` |
 | Nagad      | Sealed checkout (community flow)      | unverified | `orderId` = `SIM:<name>[:suffix]`      |
+
+Refunds work on every gateway (full or partial, idempotent, never above the
+paid amount). See [Refunds](https://junaaid96.github.io/paysim-bd/concepts/refunds)
+for the request shapes.
 
 Each plugin ships `spec/vN.json` listing every endpoint/field with sources and
 `verified | docs-only | unverified` fidelity. No official Nagad docs are publicly
@@ -164,7 +173,7 @@ All configuration is environment variables, validated at boot with Zod
 | `LOG_LEVEL`                                    | No       | Pino log level (default `info`).                                                 |
 | `STORAGE_DRIVER`                               | No       | `fs` (local disk) or `s3`. `fs` is refused in production.                        |
 | `STORAGE_FS_DIR`                               | No       | Directory for the `fs` driver.                                                   |
-| `S3_ENDPOINT`                                  | If `s3`  | S3-compatible endpoint (e.g. Cloudflare R2).                                     |
+| `S3_ENDPOINT`                                  | If `s3`  | S3-compatible endpoint (e.g. Neon object storage).                               |
 | `S3_REGION`                                    | No       | Region (default `auto`).                                                         |
 | `S3_BUCKET`                                    | If `s3`  | Bucket name.                                                                     |
 | `S3_ACCESS_KEY_ID`                             | If `s3`  | Access key ID.                                                                   |
@@ -192,10 +201,10 @@ All configuration is environment variables, validated at boot with Zod
 
 ## Run modes
 
-| Mode              | How                  | Callbacks to localhost? |
-| ----------------- | -------------------- | ----------------------- |
-| Local (primary)   | `docker compose up`  | Yes                     |
-| Hosted playground | Vercel + Neon (+ R2) | **Never** — SSRF guard  |
+| Mode              | How                 | Callbacks to localhost? |
+| ----------------- | ------------------- | ----------------------- |
+| Local (primary)   | `docker compose up` | Yes                     |
+| Hosted playground | Vercel + Neon       | **Never** — SSRF guard  |
 
 The hosted instance cannot reach your localhost. This is deliberate SSRF
 protection (`ALLOW_PRIVATE_CALLBACK_TARGETS=false`), not a bug. Run it locally
@@ -240,6 +249,7 @@ see the [deploy guide](https://junaaid96.github.io/paysim-bd/deploy).
 - [x] Phase 3: bKash plugin
 - [x] Phase 4: Nagad plugin
 - [x] Phase 5: parity suite, docs site, GHCR release, hosted deploy guide
+- [x] Refunds: full/partial refunds for SSLCommerz, bKash and Nagad, dashboard refund action
 
 ## Contributing
 

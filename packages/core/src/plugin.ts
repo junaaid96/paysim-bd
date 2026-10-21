@@ -230,6 +230,17 @@ export interface PluginStores {
     amountMinor: number,
     metadataPatch?: Record<string, unknown>,
   ): Promise<TxnRecord>;
+  /**
+   * Atomically append a refund entry to metadata.refunds, adding countMinor
+   * to metadata.refundedMinor only if the total stays within amountMinor and
+   * merchantRef (when set) is unused. Returns null when the guard fails.
+   * Optional: without it, refunds fall back to read-modify-write.
+   */
+  recordRefund?(
+    id: string,
+    entry: Record<string, unknown>,
+    guard: { countMinor: number; merchantRef: string | null },
+  ): Promise<TxnRecord | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -306,6 +317,8 @@ export interface GatewayPlugin {
   defaultCredentials: Record<string, unknown>;
   /** Built-in scenario definitions seeded as global presets. */
   builtinScenarios: ScenarioDefinitionInput[];
+  /** Payment states that can be refunded (omit when refunds are unsupported). */
+  refundableStates?: readonly string[];
   /** True when no further gateway events can change this transaction. */
   isTerminalState(state: string): boolean;
   /**
