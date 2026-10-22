@@ -63,6 +63,8 @@ export const gatewayApps = pgTable('gateway_apps', {
   gateway: text('gateway').notNull(),
   name: text('name').notNull(),
   credentials: jsonb('credentials').$type<Record<string, unknown>>().notNull().default({}),
+  /** Real-sandbox mode + AES-GCM encrypted provider keys (see secrets.ts). */
+  sandbox: jsonb('sandbox').$type<Record<string, unknown>>().notNull().default({}),
   defaultScenarioId: uuid('default_scenario_id').references(() => scenarios.id, {
     onDelete: 'set null',
   }),

@@ -4,9 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-teal.svg)](CONTRIBUTING.md)
 
-> **SIMULATOR — fake money, fake credentials.** PaySim BD imitates Bangladeshi
-> payment gateways (SSLCommerz, bKash, Nagad) for development and testing. It
-> never accepts, forwards, or stores real credentials or real payments.
+> **SANDBOX ONLY — no real money.** PaySim BD imitates Bangladeshi payment
+> gateways (SSLCommerz, bKash, Nagad) for development and testing. It never
+> talks to production gateways or moves real money. The optional Real sandbox
+> mode only forwards to the providers' official sandboxes, with sandbox keys you
+> save (encrypted at rest).
 
 Open-source, local-first simulator for Bangladeshi payment gateways. Point your
 app's gateway base URL at PaySim BD instead of the real sandbox, then drive
@@ -31,6 +33,15 @@ deterministic stand-in you fully control.
 
 - **Drop-in mock gateways** — one plugin per gateway (SSLCommerz first, then
   bKash and Nagad), matching the official request/response shapes.
+- **Realistic checkout pages** — bKash and Nagad wallet flows (account number,
+  OTP, PIN) and an SSLCommerz method picker (cards, mobile banking, net
+  banking), each with a persistent "PaySim sandbox — test only, no real money"
+  label and test-value hints. OTP, PIN and card fields are never sent or stored.
+- **Optional Real sandbox mode** — per app, switch from the simulator to the
+  provider's own sandbox (SSLCommerz and bKash) without changing your app: PaySim
+  proxies session/create, validation/execute, query and refunds, and keeps the
+  timeline, live feed and callbacks working. Nagad needs merchant credentials
+  and stays on the simulator. See [Real sandbox mode](#real-sandbox-mode-optional).
 - **Scenario engine** — choose the outcome of each payment (success, failure,
   cancel, pending, timeout) instead of hoping the sandbox cooperates.
 - **Refunds** — full and partial refunds on all three gateways through their
@@ -55,15 +66,38 @@ One run through the simulator, from setup to a settled payment.
 |                                                                                                                                                |                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ![Get started](docs/screenshots/start.png)                                                                                                     | ![SSLCommerz checkout](docs/screenshots/checkout-sslcommerz.png)                                                                                                      |
-| **Get started** — copy the base URL, pick a `SIM:` marker for the outcome you want, and fire your first test payment with the ready-made curl. | **SSLCommerz checkout** — the simulated hosted payment page your customer is redirected to; choose Success, Fail or Cancel.                                           |
+| **Get started** — copy the base URL, pick a `SIM:` marker for the outcome you want, and fire your first test payment with the ready-made curl. | **SSLCommerz checkout** — pick cards, mobile banking or net banking with test values; simulator controls cover failure and cancel.                                    |
 | ![bKash checkout](docs/screenshots/checkout-bkash.png)                                                                                         | ![Nagad checkout](docs/screenshots/checkout-nagad.png)                                                                                                                |
-| **bKash checkout** — tokenized checkout page after grant-token and create payment; Verify & Pay, fail or cancel.                               | **Nagad checkout** — reached after the RSA-sealed initialize and complete calls; approve, fail or cancel the payment.                                                 |
+| **bKash checkout** — wallet number, OTP and PIN steps after grant-token and create payment (any test values); fail or cancel on demand.        | **Nagad checkout** — reached after the RSA-sealed initialize and complete calls; account number, OTP and PIN steps, or fail/cancel.                                   |
 | ![Live event feed](docs/screenshots/live-feed.png)                                                                                             | ![Transaction timeline](docs/screenshots/transaction-timeline.png)                                                                                                    |
 | **Live event feed** — every gateway event streams in as it happens, next to totals per outcome and the latest transactions.                    | **Test payment timeline** — one SSLCommerz payment end to end: init, scenario attached, checkout viewed, success, IPN, each with a redacted payload and copy-as-curl. |
 | ![Transactions](docs/screenshots/transactions.png)                                                                                             | ![Scenarios & clock](docs/screenshots/scenarios.png)                                                                                                                  |
 | **Transactions** — filter by gateway or search by reference; any row opens its full request/callback timeline.                                 | **Scenarios & clock** — the per-gateway scenario catalog plus a fake clock to fast-forward expiries and delayed callbacks.                                            |
 | ![Gateways](docs/screenshots/gateways.png)                                                                                                     |                                                                                                                                                                       |
-| **Gateways** — merchant apps per gateway with their (redacted) credentials and default scenario.                                               |                                                                                                                                                                       |
+| **Gateways** — merchant apps per gateway: default scenario plus the Simulator / Real sandbox switch and masked sandbox keys.                   |                                                                                                                                                                       |
+
+## Real sandbox mode (optional)
+
+The simulator is the default for every app. When you want a final rehearsal
+against a provider's own sandbox, open **Gateways**, save that gateway's sandbox
+keys and switch the app to **Real sandbox**. Your app keeps calling PaySim with
+the same PaySim credentials, so client code (QuickFood included) needs no change.
+
+| Gateway    | Real sandbox                  | Provider calls                                                                                            |
+| ---------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| SSLCommerz | Available                     | `sandbox.sslcommerz.com` session API, validation API (every return and IPN), refund API                   |
+| bKash      | Available                     | Tokenized checkout sandbox: grant token (cached in `kv_entries`), create, execute, payment status, refund |
+| Nagad      | Requires merchant credentials | Not offered; Nagad issues sandbox keys only to registered merchants                                       |
+
+- Keys are AES-256-GCM encrypted with `PAYSIM_SECRETS_KEY` and never returned by
+  the API (the dashboard shows identifiers and a masked hint).
+- SSLCommerz successes are always re-checked with the validation API before
+  PaySim records them and calls your `success_url` and IPN.
+- Public test keys are one click away (SSLCommerz `testbox`, bKash's shared
+  tokenized sandbox keys). The public bKash sandbox allows one refund per payment.
+- Scenarios, `SIM:` markers and the fake clock apply to simulator mode only.
+
+Details: [docs → Real sandbox mode](https://junaaid96.github.io/paysim-bd/concepts/real-sandbox).
 
 ## Used in QuickFood
 
@@ -194,6 +228,7 @@ All configuration is environment variables, validated at boot with Zod
 | `CORS_ORIGIN`                                  | No       | Comma-separated extra allowed origins.                                           |
 | `WEB_DIST_DIR`                                 | No       | Built dashboard directory served by Express (auto-detected).                     |
 | `NEON_REALTIME_SECRET`                         | No       | Neon Realtime secret for sealing live queries (unset = feed falls back to REST). |
+| `PAYSIM_SECRETS_KEY`                           | No       | Encrypts Real sandbox keys at rest (unset = Real sandbox mode disabled).         |
 | `NEON_REALTIME_URL` / `VITE_NEON_REALTIME_URL` | No       | Realtime WebSocket URL (server / public Vite var, same value).                   |
 
 ## Scripts

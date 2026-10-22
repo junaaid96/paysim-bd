@@ -3,7 +3,7 @@ layout: home
 hero:
   name: paysim-bd
   text: A local-first simulator for Bangladeshi payment gateways.
-  tagline: Point your app at the simulator, drive success/failure/edge cases on demand, and inspect every request. SIMULATOR — fake money only.
+  tagline: Point your app at the simulator, drive success/failure/edge cases on demand, and inspect every request. Sandbox only — no real money.
   actions:
     - theme: brand
       text: 60-second quickstart

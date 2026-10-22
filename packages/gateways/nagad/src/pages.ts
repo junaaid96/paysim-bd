@@ -1,3 +1,5 @@
+import { SANDBOX_LABEL, walletCheckoutPage } from '@paysim/core';
+
 // Mock Nagad payment page + post-action redirect page. Plain HTML, no
 // gateway assets. The redirect page mirrors the community flow: the
 // customer browser follows a GET redirect to the merchant callback URL.
@@ -21,7 +23,7 @@ function shell(title: string, inner: string): string {
 <html lang="en">
 <head><meta charset="utf-8"><title>${escapeHtml(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Inter,system-ui,sans-serif;background:#f4f4f5;color:#18181b;margin:0;padding:0 1rem 2rem}.sim{max-width:560px;margin:1.5rem auto 0;background:repeating-linear-gradient(45deg,#fbbf24 0 12px,#f59e0b 12px 24px);color:#000;padding:.6rem 1rem;font-weight:700;text-align:center;border-radius:12px 12px 0 0;font-size:13px}.shell{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4e7;border-top:4px solid #ec5a24;border-radius:0 0 14px 14px;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.06)}h1,h2{color:#ec5a24;margin-top:0}input{padding:.55rem .7rem;border:1px solid #d4d4d8;border-radius:8px;font:inherit}button{background:#ec5a24;color:#fff;border:0;border-radius:8px;padding:.6rem 1.1rem;font-weight:600;cursor:pointer;margin:.25rem .25rem .25rem 0;font:inherit;font-weight:600}button[value=fail],button[value=cancel]{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}.foot{max-width:560px;margin:1rem auto;text-align:center;font-size:12px;color:#71717a}</style></head>
 <body>
-<div class="sim">SIMULATOR — fake money, no real wallet is touched</div>
+<div class="sim">${SANDBOX_LABEL}</div>
 <div class="shell">
 ${inner}
 </div>
@@ -37,30 +39,28 @@ export interface CheckoutPageInput {
   appName: string;
   state: string;
   notice?: string;
+  step?: 'number' | 'otp' | 'pin';
+  wallet?: string;
+  error?: string;
 }
 
 export function checkoutPage(input: CheckoutPageInput): string {
-  const buttons = (['success', 'fail', 'cancel'] as const)
-    .map(
-      (action) =>
-        `<button type="submit" name="action" value="${action}" style="margin-right: 0.5rem; padding: 0.5rem 1rem;">${action === 'success' ? 'Approve payment' : action === 'fail' ? 'Fail payment' : 'Cancel'}</button>`,
-    )
-    .join('\n');
-  return shell(
-    'Nagad checkout (simulator)',
-    `<h1>Nagad checkout (simulator)</h1>
-<p>Merchant: <strong>${escapeHtml(String(input.appName))}</strong></p>
-<p>Order: <code>${escapeHtml(String(input.orderId))}</code></p>
-<p>Amount: <strong>${escapeHtml(String(input.amount))} BDT</strong></p>
-<p>Payment ref: <code>${escapeHtml(String(input.paymentRefId))}</code></p>
-<p>State: <code>${escapeHtml(String(input.state))}</code></p>
-${input.notice ? `<p><em>${escapeHtml(input.notice)}</em></p>` : ''}
-<form method="POST">
-<input type="hidden" name="paymentRefId" value="${escapeHtml(String(input.paymentRefId))}">
-${buttons}
-</form>
-<p><small>Wallet / OTP / PIN entry is theater in the simulator: pick an outcome above.</small></p>`,
-  );
+  return walletCheckoutPage({
+    brand: 'nagad',
+    idField: 'paymentRefId',
+    idValue: input.paymentRefId,
+    merchant: input.appName,
+    amount: input.amount,
+    currency: 'BDT',
+    reference: input.orderId,
+    referenceLabel: 'Order',
+    state: input.state,
+    open: input.state === 'checkout',
+    step: input.step ?? 'number',
+    ...(input.wallet ? { wallet: input.wallet } : {}),
+    ...(input.error ? { error: input.error } : {}),
+    ...(input.notice ? { notice: input.notice } : {}),
+  });
 }
 
 export interface RedirectPageInput {
@@ -74,7 +74,7 @@ export function redirectPage(input: RedirectPageInput): string {
 <html lang="en">
 <head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${escapeHtml(safeHttpUrl(input.targetUrl))}"><title>Returning to merchant…</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Inter,system-ui,sans-serif;background:#f4f4f5;color:#18181b;margin:0;padding:0 1rem 2rem}.sim{max-width:560px;margin:1.5rem auto 0;background:repeating-linear-gradient(45deg,#fbbf24 0 12px,#f59e0b 12px 24px);color:#000;padding:.6rem 1rem;font-weight:700;text-align:center;border-radius:12px 12px 0 0;font-size:13px}.shell{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4e7;border-top:4px solid #ec5a24;border-radius:0 0 14px 14px;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.06)}h1,h2{color:#ec5a24;margin-top:0}input{padding:.55rem .7rem;border:1px solid #d4d4d8;border-radius:8px;font:inherit}button{background:#ec5a24;color:#fff;border:0;border-radius:8px;padding:.6rem 1.1rem;font-weight:600;cursor:pointer;margin:.25rem .25rem .25rem 0;font:inherit;font-weight:600}button[value=fail],button[value=cancel]{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}.foot{max-width:560px;margin:1rem auto;text-align:center;font-size:12px;color:#71717a}</style></head>
 <body>
-<div class="sim">SIMULATOR</div>
+<div class="sim">${SANDBOX_LABEL}</div>
 <div class="shell">
 <h1>Payment ${escapeHtml(String(input.status))}</h1>
 <p>Payment ref: <code>${escapeHtml(String(input.paymentRefId))}</code></p>

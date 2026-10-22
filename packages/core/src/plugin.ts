@@ -80,6 +80,17 @@ export const AppRecordSchema = z.object({
   name: z.string(),
   credentials: z.record(z.string(), z.unknown()),
   defaultScenarioId: z.string().nullable(),
+  /**
+   * Optional real-sandbox mode. Simulator is the default. `keys` holds the
+   * DECRYPTED provider sandbox keys and only exists server-side; the public
+   * API view replaces it with `configured` + masked hints.
+   */
+  sandbox: z
+    .object({
+      mode: z.enum(['simulator', 'real']),
+      keys: z.record(z.string(), z.string()).nullable(),
+    })
+    .optional(),
 });
 export type AppRecord = z.infer<typeof AppRecordSchema>;
 
@@ -303,7 +314,52 @@ export interface ScenarioEngine {
 export type CredentialCheck =
   { ok: true; value: Record<string, unknown> } | { ok: false; issues: string[] };
 
+export interface SandboxKeyField {
+  name: string;
+  label: string;
+  /** Secret fields are never echoed back (only a masked hint). */
+  secret: boolean;
+}
+
+export interface SettleRefundInput {
+  amountMinor: number;
+  reason: string;
+  refundId: string;
+}
+
+export interface SettleRefundResult {
+  ok: boolean;
+  failureReason?: string;
+  /** Provider-side refund reference (stored on the ledger entry). */
+  providerRefundId?: string;
+}
+
+/** Optional real provider sandbox support (an extra; simulator stays default). */
+export interface SandboxSupport {
+  /** 'available': can proxy to the provider sandbox; 'requires_merchant': not offered. */
+  status: 'available' | 'requires_merchant';
+  note: string;
+  docsUrl: string;
+  fields: SandboxKeyField[];
+  /** Publicly documented test keys (prefill hint), when the provider publishes them. */
+  publicTestKeys?: Record<string, string>;
+  validateKeys(input: unknown): CredentialCheck;
+  /** Refund at the provider; called before the ledger entry is written. */
+  settleRefund?(
+    ctx: Pick<PluginContext, 'stores' | 'logger' | 'clock'>,
+    txn: TxnRecord,
+    app: AppRecord,
+    input: SettleRefundInput,
+  ): Promise<SettleRefundResult>;
+}
+
+export function isRealSandbox(app: AppRecord | null | undefined): boolean {
+  return app?.sandbox?.mode === 'real' && !!app.sandbox.keys;
+}
+
 export interface GatewayPlugin {
+  /** Real provider sandbox support (absent = simulator only). */
+  sandbox?: SandboxSupport;
   name: string;
   displayName: string;
   /** URL prefixes owned by this plugin (for the gateway 404 guard). */

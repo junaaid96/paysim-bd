@@ -10,6 +10,7 @@ import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import {
+  nextWalletStep,
   parseMagicScenario,
   redactHeaders,
   redactValue,
@@ -440,6 +441,31 @@ export function createNagadRouter(ctx: PluginContext): Router {
     const paymentRefId =
       asString(body['paymentRefId']) || firstQueryParam(req.query['paymentRefId']);
     const action = asString(body['action']);
+    if (paymentRefId && action === '' && typeof body['step'] === 'string') {
+      // Wallet step advance (number -> OTP -> PIN). Nothing is stored.
+      const stepTxn = await ctx.stores.findTransactionBySession(GATEWAY, paymentRefId);
+      if (!stepTxn) {
+        res
+          .status(404)
+          .send(errorPage('Unknown payment', 'No transaction for this paymentRefId.', 404));
+        return;
+      }
+      const next = nextWalletStep(body);
+      const stepApp = await ctx.stores.getApp(stepTxn.gatewayAppId);
+      res.status(200).send(
+        checkoutPage({
+          paymentRefId,
+          amount: formatAmountMinor(stepTxn.amountMinor),
+          orderId: asString(stepTxn.metadata['orderId']),
+          appName: appName(stepApp),
+          state: stepTxn.state,
+          step: next.step,
+          wallet: next.wallet,
+          ...(next.error ? { error: next.error } : {}),
+        }),
+      );
+      return;
+    }
     if (!paymentRefId || !(CHECKOUT_ACTIONS as readonly string[]).includes(action)) {
       res
         .status(400)

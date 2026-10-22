@@ -11,7 +11,7 @@ cp .env.example .env
 docker compose up
 ```
 
-Open the dashboard at `http://localhost:8080` (look for the SIMULATOR banner). The API listens on `http://localhost:3001`.
+Open the dashboard at `http://localhost:8080` (look for the "Sandbox only" note in the sidebar). The API listens on `http://localhost:3001`.
 
 ## 2. Create a fake store
 
@@ -46,3 +46,7 @@ The response carries `GatewayPageURL`. Open it to see the mock payment page, or 
 Back in the dashboard: the transaction appears with a timeline (events + callback attempts), a request inspector with copy-as-curl, and a replay button.
 
 Next: [Scenarios](/concepts/scenarios) · [Fake clock](/concepts/clock) · [bKash](/gateways/bkash) · [Nagad](/gateways/nagad)
+
+## Next: Real sandbox mode (optional)
+
+Once your flows pass on the simulator, you can rehearse SSLCommerz and bKash against the providers' own sandboxes from the **Gateways** page. See [Real sandbox mode](./concepts/real-sandbox).

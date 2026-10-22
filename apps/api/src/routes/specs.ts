@@ -14,6 +14,15 @@ export function createSpecsRouter(plugins: GatewayPlugin[]): Router {
         displayName: plugin.displayName,
         version: plugin.spec.version,
         fidelity: plugin.spec.fidelity,
+        sandbox: plugin.sandbox
+          ? {
+              status: plugin.sandbox.status,
+              note: plugin.sandbox.note,
+              docsUrl: plugin.sandbox.docsUrl,
+              fields: plugin.sandbox.fields,
+              publicTestKeys: plugin.sandbox.publicTestKeys ?? null,
+            }
+          : null,
       })),
     );
   });

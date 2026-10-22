@@ -27,6 +27,7 @@ import {
   formatBkashDatetime,
   parseAmountToMinor,
 } from './builders.js';
+import { realKeys, settleRealRefund } from './real.js';
 import { asString, firstHeader, headersToRecord } from './util.js';
 
 const GATEWAY = 'bkash';
@@ -115,6 +116,9 @@ export function mountBkashRefundRoutes(
           reason: body.reason ?? '',
           source: 'api',
           refundIdPrefix: 'BKRF',
+          ...(realKeys(app) && txn.metadata['sandboxMode'] === 'real'
+            ? { settle: (input) => settleRealRefund(ctx, txn, app, input) }
+            : {}),
           eventData: {
             http: {
               method: 'POST',

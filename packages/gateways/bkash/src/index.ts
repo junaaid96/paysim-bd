@@ -14,6 +14,9 @@ import { runScenarioAction } from './scenario-actions.js';
 import { BUILTIN_SCENARIOS } from './scenarios.js';
 import { isTerminal, type BkashState } from './state-machine.js';
 import { REFUNDABLE_STATES } from './refund.js';
+import { bkashSandbox } from './real.js';
+
+export { setBkashFetch } from './real.js';
 
 function loadSpec(): GatewayPlugin['spec'] {
   // Resolves to packages/gateways/bkash/spec/v1.json from both src/
@@ -55,6 +58,7 @@ export const bkashPlugin: GatewayPlugin = {
     }
     return { ok: true, value: { ...parsed.data } };
   },
+  sandbox: bkashSandbox,
   builtinScenarios: BUILTIN_SCENARIOS,
   refundableStates: REFUNDABLE_STATES,
   isTerminalState(state: string): boolean {

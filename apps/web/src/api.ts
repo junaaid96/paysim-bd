@@ -9,7 +9,6 @@ import {
   GatewaySpecSchema,
   ScenarioDefinitionSchema,
   TxnRecordSchema,
-  type AppRecord,
   type DeliveryRecord,
   type GatewaySpec,
   type TxnRecord,
@@ -52,9 +51,49 @@ export const ClockStateSchema = z.object({
   jobsShifted: z.number().optional(),
 });
 export type ClockState = z.infer<typeof ClockStateSchema>;
+/** Public app view: sandbox keys are never returned, only masked hints. */
+export const PublicAppSchema = AppRecordSchema.omit({ sandbox: true }).extend({
+  sandbox: z
+    .object({
+      mode: z.enum(['simulator', 'real']),
+      configured: z.boolean(),
+      hints: z.record(z.string(), z.string()),
+    })
+    .default({ mode: 'simulator', configured: false, hints: {} }),
+});
+export type AppRecord = z.infer<typeof PublicAppSchema>;
+
+export const GatewayInfoSchema = z.object({
+  gateway: z.string(),
+  displayName: z.string(),
+  version: z.string(),
+  fidelity: z.string(),
+  sandbox: z
+    .object({
+      status: z.enum(['available', 'requires_merchant']),
+      note: z.string(),
+      docsUrl: z.string(),
+      fields: z.array(z.object({ name: z.string(), label: z.string(), secret: z.boolean() })),
+      publicTestKeys: z.record(z.string(), z.string()).nullable(),
+    })
+    .nullable()
+    .default(null),
+});
+export type GatewayInfo = z.infer<typeof GatewayInfoSchema>;
+
+export async function fetchGateways(): Promise<GatewayInfo[]> {
+  return z.array(GatewayInfoSchema).parse(await getJson('/api/specs'));
+}
+
+export async function updateAppSandbox(
+  appId: string,
+  input: { mode: 'simulator' | 'real'; keys?: Record<string, string>; clearKeys?: boolean },
+): Promise<AppRecord> {
+  return PublicAppSchema.parse(await sendJson('PUT', `/api/apps/${appId}/sandbox`, input));
+}
+
 export type {
   ActivityRow,
-  AppRecord,
   DeliveryRecord,
   EventRecord,
   GatewaySpec,
@@ -96,7 +135,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchApps(workspace: string): Promise<AppRecord[]> {
-  return z.array(AppRecordSchema).parse(await getJson(`/api/apps?workspace=${workspace}`));
+  return z.array(PublicAppSchema).parse(await getJson(`/api/apps?workspace=${workspace}`));
 }
 
 export async function fetchTxns(workspace: string): Promise<TxnRecord[]> {
@@ -146,7 +185,7 @@ export async function createApp(input: {
   name: string;
   credentials: Record<string, unknown>;
 }): Promise<AppRecord> {
-  return AppRecordSchema.parse(await sendJson('POST', '/api/apps', input));
+  return PublicAppSchema.parse(await sendJson('POST', '/api/apps', input));
 }
 
 export const SealedActivitySchema = z.object({
@@ -170,7 +209,7 @@ export async function updateAppDefault(
   appId: string,
   scenarioId: string | null,
 ): Promise<AppRecord> {
-  return AppRecordSchema.parse(
+  return PublicAppSchema.parse(
     await sendJson('PATCH', `/api/apps/${appId}`, { defaultScenarioId: scenarioId }),
   );
 }

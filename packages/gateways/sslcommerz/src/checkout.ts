@@ -5,6 +5,7 @@ import { formatDbDatetime, type AppRecord, type PluginContext, type TxnRecord } 
 
 import {
   DEFAULT_CARD_FIXTURE,
+  type CardFixture,
   buildCallbackPayload,
   buildIpnPayload,
   generateRefId,
@@ -21,6 +22,8 @@ export interface CompleteCheckoutInput {
   outcome: CheckoutOutcome;
   /** Skip the immediate IPN (late-IPN scenarios deliver it via a later step). */
   skipIpn?: boolean;
+  /** Real-sandbox mode: provider-issued references replace generated ones. */
+  provider?: { valId: string; bankTranId: string; card?: CardFixture; tranDate?: string };
 }
 
 export interface CompleteCheckoutResult {
@@ -34,15 +37,17 @@ export async function completeCheckout(
 ): Promise<CompleteCheckoutResult> {
   const { ctx, txn, app, outcome } = input;
   const target = applyCheckoutAction('initiated', outcome);
-  const tranDate = formatDbDatetime(ctx.clock.now(txn.workspaceId));
-  const bankTranId = generateRefId();
-  const valId = outcome === 'success' ? generateRefId() : '';
+  const provider = input.provider;
+  const tranDate = provider?.tranDate || formatDbDatetime(ctx.clock.now(txn.workspaceId));
+  const bankTranId = provider ? provider.bankTranId : generateRefId();
+  const valId = outcome === 'success' ? (provider ? provider.valId : generateRefId()) : '';
+  const card = provider?.card ?? DEFAULT_CARD_FIXTURE;
   const updated = await ctx.stores.transitionTransaction(
     txn.id,
     target,
     `sslcommerz.checkout.${outcome}`,
     { sessionkey: txn.gatewaySessionKey, ipnStatus: ipnStatusFor(target) },
-    { valId, bankTranId, tranDate },
+    { valId, bankTranId, tranDate, ...(provider ? { card } : {}) },
   );
 
   const storePasswd = asString(app?.credentials['store_passwd']);
@@ -62,7 +67,7 @@ export async function completeCheckout(
         storePasswd,
         bankTranId,
         tranDate,
-        card: DEFAULT_CARD_FIXTURE,
+        card,
         values: {
           a: asString(txn.metadata['valueA']),
           b: asString(txn.metadata['valueB']),
@@ -99,7 +104,7 @@ export async function completeCheckout(
     storePasswd,
     bankTranId,
     tranDate,
-    card: DEFAULT_CARD_FIXTURE,
+    card,
     errorText:
       outcome === 'fail'
         ? 'Payment failed at the simulator'

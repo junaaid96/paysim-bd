@@ -18,6 +18,7 @@ import {
 
 import {
   DEFAULT_CARD_FIXTURE,
+  type CardFixture,
   buildInitFailure,
   buildInitResponse,
   buildValidationResponse,
@@ -26,6 +27,8 @@ import {
 } from './builders.js';
 import { completeCheckout } from './checkout.js';
 import { mountSslcommerzRefundRoutes } from './refund.js';
+import { mountSslcommerzSandboxRoutes } from './real-routes.js';
+import { initRealSession, providerTranId, realKeys } from './real.js';
 import { autoPostCsp, autoPostForm, checkoutPage, errorPage } from './pages.js';
 import { CHECKOUT_ACTIONS, type CheckoutAction } from './state-machine.js';
 import { asString, firstQueryParam, headersToRecord } from './util.js';
@@ -207,6 +210,37 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
       },
     });
     ctx.logger.info('sslcommerz session created', { tran_id: init.tran_id, sessionkey });
+    const keys = realKeys(app);
+    if (keys) {
+      // Real sandbox: scenarios don't apply; the provider decides the outcome.
+      const real = await initRealSession(ctx, txn, keys, fullInit);
+      if (!real.ok || !real.gatewayPageUrl) {
+        await ctx.stores.transitionTransaction(
+          txn.id,
+          'failed',
+          'sslcommerz.sandbox.init_failed',
+          { reason: real.failedreason ?? 'unknown' },
+          { sandboxMode: 'real' },
+        );
+        res
+          .status(200)
+          .json(buildInitFailure(`SSLCommerz sandbox: ${real.failedreason ?? 'init failed'}`));
+        return;
+      }
+      await ctx.stores.transitionTransaction(
+        txn.id,
+        'initiated',
+        'sslcommerz.sandbox.session',
+        { providerTranId: providerTranId(txn), gatewayPageUrl: real.gatewayPageUrl },
+        {
+          sandboxMode: 'real',
+          providerTranId: providerTranId(txn),
+          providerSessionKey: real.sessionkey ?? '',
+        },
+      );
+      res.status(200).json(buildInitResponse({ sessionkey, gatewayPageUrl: real.gatewayPageUrl }));
+      return;
+    }
     await ctx.engine.attach({
       txn,
       scenarioId: resolved.scenarioId,
@@ -270,7 +304,7 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
         storePasswd,
         bankTranId: asString(txn.metadata['bankTranId']),
         tranDate: asString(txn.metadata['tranDate']),
-        card: DEFAULT_CARD_FIXTURE,
+        card: (txn.metadata['card'] as CardFixture | undefined) ?? DEFAULT_CARD_FIXTURE,
         values: {
           a: asString(txn.metadata['valueA']),
           b: asString(txn.metadata['valueB']),
@@ -369,6 +403,7 @@ export function createSslcommerzRouter(ctx: PluginContext): Router {
   });
 
   mountSslcommerzRefundRoutes(router, ctx);
+  mountSslcommerzSandboxRoutes(router, ctx);
 
   return router;
 }

@@ -20,6 +20,7 @@ import {
   type TxnRecord,
 } from '@paysim/core';
 
+import { realKeys, settleRealRefund } from './real.js';
 import { firstQueryParam } from './util.js';
 
 const GATEWAY = 'sslcommerz';
@@ -132,6 +133,9 @@ export function mountSslcommerzRefundRoutes(router: Router, ctx: PluginContext):
           reason: remarks,
           source: 'api',
           refundIdPrefix: 'SSLRF',
+          ...(realKeys(app) && txn.metadata['sandboxMode'] === 'real'
+            ? { settle: (input) => settleRealRefund(ctx, txn, app, input) }
+            : {}),
           eventData: {
             http: {
               method: 'GET',

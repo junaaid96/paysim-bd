@@ -23,3 +23,7 @@ Session init + hosted payment page + server-to-server IPN.
 ## Known gaps
 
 `verify_sign` vectors, `val_id`/`bank_tran_id` generation formats, and a few range rejections are marked `unverified` in the spec — the docs don't pin them down. These need real-sandbox recordings to promote.
+
+## Real sandbox mode
+
+Optional per app: switch this gateway from the simulator to the provider's own sandbox in **Gateways**, without changing your client. See [Real sandbox mode](../concepts/real-sandbox).

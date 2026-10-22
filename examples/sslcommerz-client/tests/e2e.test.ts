@@ -136,7 +136,7 @@ maybe('sslcommerz end-to-end', () => {
     const page = await fetch(gatewayPageUrl);
     expect(page.status).toBe(200);
     const pageHtml = await page.text();
-    expect(pageHtml).toContain('SIMULATOR');
+    expect(pageHtml).toContain('PaySim sandbox — test only, no real money');
     const tranId = pageHtml.match(/EXAMPLE-\d+/)?.[0] ?? '';
     expect(tranId).not.toBe('');
     successTranId.push(tranId);

@@ -6,7 +6,9 @@ import { eq } from 'drizzle-orm';
 
 import {
   SystemClock,
+  isRealSandbox,
   processRefund,
+  type PluginLogger,
   type Clock,
   type DeliverCallbackInput,
   type DeliveryRecord,
@@ -50,6 +52,13 @@ export interface TxnOpsDeps {
   clock?: Clock;
 }
 
+const silentLogger: PluginLogger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
 export class RefundUnsupportedError extends Error {
   constructor(gateway: string) {
     super(`Refunds are not supported for ${gateway}`);
@@ -77,20 +86,31 @@ export async function refundTxn(
   const plugin = deps.applyDeps.plugins.find((candidate) => candidate.name === txn.gateway);
   const states = plugin?.refundableStates;
   if (!states) throw new RefundUnsupportedError(txn.gateway);
-  return processRefund(
-    { stores: deps.engineDeps.stores, clock: deps.clock ?? new SystemClock() },
-    txn,
-    {
-      gateway: txn.gateway,
-      refundableStates: states,
-      amountMinor: input.amountMinor,
-      merchantRef: input.idempotencyKey ?? null,
-      reason: input.reason ?? 'Dashboard refund',
-      source: 'dashboard',
-      simulateFailure: input.simulateFailure === true,
-      refundIdPrefix: 'DBRF',
-    },
-  );
+  const app = await deps.engineDeps.stores.getApp(txn.gatewayAppId);
+  const settleRefund = plugin?.sandbox?.settleRefund;
+  const real = app && isRealSandbox(app) && settleRefund ? { app, settleRefund } : null;
+  const clock = deps.clock ?? new SystemClock();
+  return processRefund({ stores: deps.engineDeps.stores, clock }, txn, {
+    gateway: txn.gateway,
+    refundableStates: states,
+    amountMinor: input.amountMinor,
+    merchantRef: input.idempotencyKey ?? null,
+    reason: input.reason ?? 'Dashboard refund',
+    source: 'dashboard',
+    simulateFailure: input.simulateFailure === true,
+    refundIdPrefix: 'DBRF',
+    ...(real
+      ? {
+          settle: (settleInput) =>
+            real.settleRefund(
+              { stores: deps.engineDeps.stores, clock, logger: silentLogger },
+              txn,
+              real.app,
+              settleInput,
+            ),
+        }
+      : {}),
+  });
 }
 
 async function loadTxn(deps: TxnOpsDeps, txnId: string): Promise<TxnRecord> {

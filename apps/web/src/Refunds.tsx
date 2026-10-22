@@ -69,7 +69,7 @@ function RefundDialog({
       amountMinor: minor,
       reason: reason.trim() || undefined,
       idempotencyKey: key.current,
-      simulateFailure,
+      simulateFailure: simulateFailure && txn.metadata['sandboxMode'] !== 'real',
     })
       .then(async ({ refund }) => {
         await queryClient.invalidateQueries();
@@ -143,14 +143,21 @@ function RefundDialog({
               className="input"
             />
           </label>
-          <label className="flex items-center gap-2 text-xs text-zinc-400">
-            <input
-              type="checkbox"
-              checked={simulateFailure}
-              onChange={(event) => setSimulateFailure(event.target.checked)}
-            />
-            Simulate a declined refund
-          </label>
+          {txn.metadata['sandboxMode'] === 'real' ? (
+            <p className="text-xs text-zinc-400">
+              This payment ran in Real sandbox mode: the refund is sent to the provider&apos;s
+              sandbox{txn.gateway === 'bkash' ? ' (bKash allows one refund per payment)' : ''}.
+            </p>
+          ) : (
+            <label className="flex items-center gap-2 text-xs text-zinc-400">
+              <input
+                type="checkbox"
+                checked={simulateFailure}
+                onChange={(event) => setSimulateFailure(event.target.checked)}
+              />
+              Simulate a declined refund
+            </label>
+          )}
           {!valid && amount.trim() !== '' && (
             <p className="text-xs text-amber-400">
               Enter an amount between 0.01 and {(refundableMinor / 100).toFixed(2)}.

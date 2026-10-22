@@ -256,6 +256,11 @@ export default function TxnDetail({ txnId }: { txnId: string }): JSX.Element {
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
             <StateChip state={txn.state} />
             <RefundChip txn={txn} />
+            {txn.metadata['sandboxMode'] === 'real' && (
+              <span className="rounded-full bg-sky-900 px-2 py-0.5 text-xs font-medium text-sky-300">
+                Real sandbox
+              </span>
+            )}
             <span>{gatewayName(txn.gateway)}</span>
           </div>
         </div>
