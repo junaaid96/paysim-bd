@@ -1,8 +1,10 @@
 // Simulator-owned HTML: the mock hosted payment page and the auto-POST
-// return form. Content is ours (SIMULATOR banner everywhere); only the
+// return form. Content is ours (PaySim sandbox label everywhere); only the
 // gw.php path + SESSIONKEY param mirror the real gateway.
 
 import { createHash } from 'node:crypto';
+
+import { SANDBOX_LABEL, cardCheckoutPage } from '@paysim/core';
 
 export function escapeHtml(input: string): string {
   return input
@@ -13,10 +15,7 @@ export function escapeHtml(input: string): string {
     .replace(/'/g, '&#39;');
 }
 
-const BANNER =
-  '<div class="sim">' +
-  'SIMULATOR — no real money moves here. Do not enter real card details.' +
-  '</div>';
+const BANNER = `<div class="sim">${SANDBOX_LABEL}</div>`;
 
 const STYLE =
   'body{font-family:Inter,system-ui,sans-serif;background:#f4f4f5;color:#18181b;margin:0;padding:0 1rem 2rem}' +
@@ -49,29 +48,15 @@ export interface CheckoutPageInput {
 }
 
 export function checkoutPage(input: CheckoutPageInput): string {
-  const terminal = input.state !== 'initiated';
-  const buttons = terminal
-    ? `<p><strong>Outcome: ${escapeHtml(input.state.toUpperCase())}.</strong> ` +
-      'This session is closed; buttons are disabled in Phase 1 (replay arrives with scenarios in Phase 2).</p>'
-    : ['success', 'fail', 'cancel']
-        .map(
-          (action) =>
-            `<form method="POST" style="display:inline;margin-right:8px">` +
-            `<input type="hidden" name="SESSIONKEY" value="${escapeHtml(input.sessionkey)}">` +
-            `<button type="submit" name="action" value="${action}">` +
-            `${action === 'success' ? 'Success' : action === 'fail' ? 'Fail' : 'Cancel'}` +
-            '</button></form>',
-        )
-        .join('');
-  return shell(
-    'Simulated SSLCommerz checkout',
-    `<h1>Simulated payment page</h1>` +
-      `<p>Store: <strong>${escapeHtml(input.storeName)}</strong></p>` +
-      `<p>Order: <code>${escapeHtml(input.tranId)}</code></p>` +
-      `<p>Amount: <strong>${escapeHtml(input.amount)} ${escapeHtml(input.currency)}</strong></p>` +
-      (input.notice ? `<p><em>${escapeHtml(input.notice)}</em></p>` : '') +
-      buttons,
-  );
+  return cardCheckoutPage({
+    sessionkey: input.sessionkey,
+    merchant: input.storeName,
+    amount: input.amount,
+    currency: input.currency,
+    tranId: input.tranId,
+    state: input.state,
+    ...(input.notice ? { notice: input.notice } : {}),
+  });
 }
 
 /** Inline auto-submit script of the return page (hashed into its CSP). */

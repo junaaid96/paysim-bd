@@ -126,7 +126,7 @@ maybe('nagad flow integration', () => {
       `/nagad/checkout?paymentRefId=${started.paymentReferenceId}`,
     );
     expect(page.status).toBe(200);
-    expect(page.text).toContain('SIMULATOR');
+    expect(page.text).toContain('PaySim sandbox — test only, no real money');
 
     const settled = await request(app)
       .post('/nagad/checkout')

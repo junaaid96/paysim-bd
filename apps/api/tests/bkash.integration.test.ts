@@ -102,7 +102,7 @@ maybe('bkash flow integration', () => {
 
     const page = await request(app).get(`/bkash/checkout?paymentId=${paymentId}`);
     expect(page.status).toBe(200);
-    expect(page.text).toContain('SIMULATOR');
+    expect(page.text).toContain('PaySim sandbox — test only, no real money');
 
     const early = await execute(paymentId);
     expect(early['externalCode']).toBe('2060');

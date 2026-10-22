@@ -19,3 +19,7 @@ Magic: `orderId = SIM:<name>[:suffix]`. Unknown names fail initialize loudly.
 ## Crypto fixtures (fake keys, real shape)
 
 Mutual RSA (PKCS1v15 encrypt, PKCS1v15+SHA256 sign) with **published fake keys** in `packages/gateways/nagad/spec/fixtures/FAKE-*.pem`. They prove message shape, never identity — the private keys are public by design and documented as such. Timestamps are `YYYYMMDDHHMMSS` in Asia/Dhaka.
+
+## Real sandbox mode
+
+Not offered for Nagad: Nagad issues sandbox keys only to registered merchants, so Nagad apps always run on the simulator. See [Real sandbox mode](../concepts/real-sandbox).

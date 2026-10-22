@@ -12,6 +12,9 @@ import { runScenarioAction } from './scenario-actions.js';
 import { BUILTIN_SCENARIOS } from './scenarios.js';
 import { isTerminal, type SslcommerzState } from './state-machine.js';
 import { REFUNDABLE_STATES } from './refund.js';
+import { sslcommerzSandbox } from './real.js';
+
+export { setSslczFetch } from './real.js';
 
 function loadSpec(): GatewayPlugin['spec'] {
   // Resolves to packages/gateways/sslcommerz/spec/v1.json from both
@@ -46,6 +49,7 @@ export const sslcommerzPlugin: GatewayPlugin = {
     }
     return { ok: true, value: { ...parsed.data } };
   },
+  sandbox: sslcommerzSandbox,
   builtinScenarios: BUILTIN_SCENARIOS,
   refundableStates: REFUNDABLE_STATES,
   isTerminalState(state: string): boolean {

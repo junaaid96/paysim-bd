@@ -71,6 +71,16 @@ export const nagadPlugin: GatewayPlugin = {
     }
     return { ok: true, value: { ...parsed.data } };
   },
+  sandbox: {
+    status: 'requires_merchant',
+    note: 'Nagad sandbox access needs a registered Nagad merchant ID and RSA key pair issued by Nagad; there are no public test keys. Nagad stays on the simulator.',
+    docsUrl: 'https://nagad.com.bd/',
+    fields: [],
+    validateKeys: () => ({
+      ok: false,
+      issues: ['Nagad real sandbox requires Nagad merchant credentials'],
+    }),
+  },
   builtinScenarios: BUILTIN_SCENARIOS,
   refundableStates: REFUNDABLE_STATES,
   isTerminalState(state: string): boolean {

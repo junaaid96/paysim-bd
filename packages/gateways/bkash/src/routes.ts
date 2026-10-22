@@ -6,6 +6,7 @@ import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import {
+  nextWalletStep,
   parseMagicScenario,
   redactHeaders,
   redactValue,
@@ -35,6 +36,8 @@ import {
 import { completeVerification } from './checkout.js';
 import { checkoutPage, errorPage, redirectPage } from './pages.js';
 import { mountBkashRefundRoutes } from './refund.js';
+import { callProvider, providerMessage, providerOk, realKeys } from './real.js';
+import { mountBkashSandboxRoutes } from './real-routes.js';
 import {
   CHECKOUT_ACTIONS,
   queryStatusFor,
@@ -266,7 +269,46 @@ export function createBkashRouter(
     }
 
     const now = ctx.clock.now(app.workspaceId);
-    const paymentId = generatePaymentId(now.getTime());
+    const keys = realKeys(app);
+    let paymentId = generatePaymentId(now.getTime());
+    let realBkashUrl = '';
+    if (keys) {
+      // Real sandbox: bKash issues the paymentID and hosts the wallet page;
+      // the customer returns to PaySim, which forwards to the merchant.
+      try {
+        const real = await callProvider(ctx.stores.kv, app, keys, '/create', {
+          mode: '0011',
+          payerReference: create.payerReference,
+          callbackURL: `${ctx.simBaseUrl}/bkash/sandbox/callback`,
+          amount: formatAmountMinor(amount.minor),
+          currency: create.currency,
+          intent: create.intent,
+          merchantInvoiceNumber: create.merchantInvoiceNumber.slice(0, 255),
+        });
+        const realId = asString(real['paymentID']);
+        const url = asString(real['bkashURL']);
+        if (!providerOk(real) || !realId || !/^https:\/\//.test(url)) {
+          res.status(200).json(
+            buildPaymentError({
+              externalCode: asString(real['statusCode'], BKASH_ERRORS.PROCESS_FAILED.externalCode),
+              errorMessageEn: `bKash sandbox: ${providerMessage(real)}`,
+            }),
+          );
+          return;
+        }
+        paymentId = realId;
+        realBkashUrl = url;
+      } catch (err) {
+        ctx.logger.warn('bkash sandbox create failed', { error: String(err) });
+        res.status(200).json(
+          buildPaymentError({
+            externalCode: BKASH_ERRORS.PROCESS_FAILED.externalCode,
+            errorMessageEn: `bKash sandbox: ${err instanceof Error ? err.message : String(err)}`,
+          }),
+        );
+        return;
+      }
+    }
     const signature = generateSignature();
     const callbacks = buildCallbackUrls(create.callbackURL, paymentId, signature);
     const txn = await ctx.stores.createTransaction({
@@ -289,6 +331,7 @@ export function createBkashRouter(
         paymentCreateTime: formatBkashDatetime(now),
         paymentUpdateTime: formatBkashDatetime(now),
         createPayload: redactValue({ ...(raw as Record<string, unknown>) }),
+        ...(keys ? { sandboxMode: 'real' } : {}),
       },
       expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
     });
@@ -307,12 +350,14 @@ export function createBkashRouter(
       },
     });
     ctx.logger.info('bkash payment created', { paymentId });
-    await ctx.engine.attach({
-      txn,
-      scenarioId: resolved.scenarioId,
-      definition: resolved.definition,
-      source: resolved.source,
-    });
+    if (!keys) {
+      await ctx.engine.attach({
+        txn,
+        scenarioId: resolved.scenarioId,
+        definition: resolved.definition,
+        source: resolved.source,
+      });
+    }
     res.status(200).json(
       buildCreateResponse({
         paymentId,
@@ -321,7 +366,7 @@ export function createBkashRouter(
         currency: create.currency,
         intent: create.intent,
         merchantInvoiceNumber: create.merchantInvoiceNumber,
-        bkashUrl: `${ctx.simBaseUrl}/bkash/checkout?paymentId=${paymentId}`,
+        bkashUrl: realBkashUrl || `${ctx.simBaseUrl}/bkash/checkout?paymentId=${paymentId}`,
         callbackURL: create.callbackURL,
         callbacks,
         signature,
@@ -377,7 +422,58 @@ export function createBkashRouter(
       return;
     }
     const now = formatBkashDatetime(ctx.clock.now(txn.workspaceId));
-    const trxId = generateTrxId();
+    let trxId = generateTrxId();
+    const keys = txn.metadata['sandboxMode'] === 'real' ? realKeys(app) : null;
+    if (txn.metadata['sandboxMode'] === 'real') {
+      if (!keys) {
+        res.status(200).json(
+          buildPaymentError({
+            externalCode: BKASH_ERRORS.PROCESS_FAILED.externalCode,
+            errorMessageEn: 'Real-sandbox keys for this app were removed; cannot execute.',
+          }),
+        );
+        return;
+      }
+      let real: Record<string, unknown>;
+      try {
+        real = await callProvider(ctx.stores.kv, app, keys, '/execute', {
+          paymentID: txn.gatewaySessionKey ?? '',
+        });
+      } catch (err) {
+        res.status(200).json(
+          buildPaymentError({
+            externalCode: BKASH_ERRORS.PROCESS_FAILED.externalCode,
+            errorMessageEn: `bKash sandbox: ${err instanceof Error ? err.message : String(err)}`,
+          }),
+        );
+        return;
+      }
+      await ctx.stores.recordEvent({
+        workspaceId: txn.workspaceId,
+        transactionId: txn.id,
+        type: 'bkash.sandbox.execute',
+        data: {
+          statusCode: asString(real['statusCode']),
+          statusMessage: providerMessage(real),
+          transactionStatus: asString(real['transactionStatus']),
+          trxID: asString(real['trxID']),
+        },
+      });
+      if (asString(real['transactionStatus']) !== 'Completed' || !real['trxID']) {
+        await ctx.stores.transitionTransaction(txn.id, 'failed', 'bkash.sandbox.execute_failed', {
+          statusCode: asString(real['statusCode']),
+          statusMessage: providerMessage(real),
+        });
+        res.status(200).json(
+          buildPaymentError({
+            externalCode: asString(real['statusCode'], BKASH_ERRORS.PROCESS_FAILED.externalCode),
+            errorMessageEn: `bKash sandbox: ${providerMessage(real)}`,
+          }),
+        );
+        return;
+      }
+      trxId = asString(real['trxID']);
+    }
     const updated = await ctx.stores.transitionTransaction(
       txn.id,
       'completed',
@@ -415,7 +511,7 @@ export function createBkashRouter(
       );
       return;
     }
-    const txn = await ctx.stores.findTransactionBySession(GATEWAY, parsed.data.paymentId);
+    let txn = await ctx.stores.findTransactionBySession(GATEWAY, parsed.data.paymentId);
     if (!txn || txn.workspaceId !== app.workspaceId) {
       res.status(200).json(
         buildPaymentError({
@@ -429,6 +525,45 @@ export function createBkashRouter(
     if (txn.state === 'expired') {
       res.status(200).json(buildPaymentError(BKASH_ERRORS.INVALID_PAYMENT_ID));
       return;
+    }
+    const realQueryKeys = txn.metadata['sandboxMode'] === 'real' ? realKeys(app) : null;
+    if (realQueryKeys) {
+      try {
+        const real = await callProvider(ctx.stores.kv, app, realQueryKeys, '/payment/status', {
+          paymentID: txn.gatewaySessionKey ?? '',
+        });
+        await ctx.stores.recordEvent({
+          workspaceId: txn.workspaceId,
+          transactionId: txn.id,
+          type: 'bkash.sandbox.query',
+          data: {
+            statusCode: asString(real['statusCode']),
+            transactionStatus: asString(real['transactionStatus']),
+            trxID: asString(real['trxID']),
+          },
+        });
+        // Execute answered at the provider but PaySim missed it: sync.
+        if (
+          txn.state === 'verified' &&
+          asString(real['transactionStatus']) === 'Completed' &&
+          real['trxID']
+        ) {
+          const syncedAt = formatBkashDatetime(ctx.clock.now(txn.workspaceId));
+          txn = await ctx.stores.transitionTransaction(
+            txn.id,
+            'completed',
+            'bkash.execute.completed',
+            { paymentId: txn.gatewaySessionKey, trxId: asString(real['trxID']), via: 'query' },
+            {
+              trxId: asString(real['trxID']),
+              paymentExecuteTime: syncedAt,
+              paymentUpdateTime: syncedAt,
+            },
+          );
+        }
+      } catch (err) {
+        ctx.logger.warn('bkash sandbox query failed', { error: String(err) });
+      }
     }
     const status = queryStatusFor(txn.state as BkashState);
     await ctx.stores.recordEvent({
@@ -490,6 +625,32 @@ export function createBkashRouter(
     const body = (req.body ?? {}) as Record<string, unknown>;
     const paymentId = asString(body['paymentId']) || firstQueryParam(req.query['paymentId']);
     const action = asString(body['action']);
+    if (paymentId && action === '' && typeof body['step'] === 'string') {
+      // Wallet step advance (number -> OTP -> PIN). Nothing is stored.
+      const stepTxn = await ctx.stores.findTransactionBySession(GATEWAY, paymentId);
+      if (!stepTxn) {
+        res
+          .status(404)
+          .send(errorPage('Unknown payment', 'No transaction for this paymentId.', 404));
+        return;
+      }
+      const next = nextWalletStep(body);
+      const stepApp = await ctx.stores.getApp(stepTxn.gatewayAppId);
+      res.status(200).send(
+        checkoutPage({
+          paymentId,
+          amount: formatAmountMinor(stepTxn.amountMinor),
+          currency: stepTxn.currency,
+          invoice: asString(stepTxn.metadata['merchantInvoiceNumber']),
+          appName: appName(stepApp),
+          state: stepTxn.state,
+          step: next.step,
+          wallet: next.wallet,
+          ...(next.error ? { error: next.error } : {}),
+        }),
+      );
+      return;
+    }
     if (!paymentId || !(CHECKOUT_ACTIONS as readonly string[]).includes(action)) {
       res
         .status(400)
@@ -528,6 +689,7 @@ export function createBkashRouter(
   });
 
   mountBkashRefundRoutes(router, ctx, authenticate);
+  mountBkashSandboxRoutes(router, ctx);
 
   return router;
 }

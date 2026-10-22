@@ -165,15 +165,38 @@ describe('bkash routes', () => {
     expect(missing.body.externalCode).toBe('2065');
   });
 
-  it('serves the mock checkout page with a SIMULATOR banner', async () => {
+  it('serves the mock checkout page with the sandbox label', async () => {
     const { paymentId } = await createOk();
     const page = await request(app).get(`/bkash/checkout?paymentId=${paymentId}`);
     expect(page.status).toBe(200);
-    expect(page.text).toContain('SIMULATOR');
+    expect(page.text).toContain('PaySim sandbox — test only, no real money');
     expect(page.text).toContain('INV-1');
-    expect(page.text).toContain('value="success"');
+    expect(page.text).toContain('name="wallet"');
     expect(page.text).toContain('value="fail"');
     expect(page.text).toContain('value="cancel"');
+
+    // Wallet number -> OTP -> PIN; bad numbers stay on step 1.
+    const bad = await request(app)
+      .post('/bkash/checkout')
+      .type('form')
+      .send({ paymentId, step: 'otp', wallet: '123' });
+    expect(bad.text).toContain('role="alert"');
+    expect(bad.text).toContain('name="wallet"');
+    const otp = await request(app)
+      .post('/bkash/checkout')
+      .type('form')
+      .send({ paymentId, step: 'otp', wallet: '01770618575' });
+    expect(otp.text).toContain('Verification code');
+    expect(otp.text).toContain('017****8575');
+    const pin = await request(app)
+      .post('/bkash/checkout')
+      .type('form')
+      .send({ paymentId, step: 'pin', wallet: '01770618575', pin: '12121' });
+    expect(pin.text).toContain('value="success"');
+    expect(pin.text).not.toContain('12121"');
+    const txnAfter = fakes.stores.txns.find((t) => t.gatewaySessionKey === paymentId);
+    expect(txnAfter?.state).toBe('initiated');
+    expect(JSON.stringify(txnAfter?.metadata)).not.toContain('12121');
 
     expect((await request(app).get('/bkash/checkout')).status).toBe(400);
     expect((await request(app).get('/bkash/checkout?paymentId=nope')).status).toBe(404);

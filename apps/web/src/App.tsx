@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 
 import ActivityFeed from './ActivityFeed';
+import { SandboxPanel } from './SandboxPanel';
 import Onboarding, { CreateAppForm, QuickstartSnippet } from './Onboarding';
 import TxnDetail from './TxnDetail';
 import {
@@ -240,7 +241,8 @@ function AppCard({ app, workspace }: { app: AppRecord; workspace: string }): JSX
         </div>
       </div>
       <FidelityBadge gateway={app.gateway} />
-      <AppDefaultPicker app={app} workspace={workspace} />
+      {app.sandbox.mode === 'simulator' && <AppDefaultPicker app={app} workspace={workspace} />}
+      <SandboxPanel app={app} />
     </div>
   );
 }
@@ -638,8 +640,8 @@ export default function App(): JSX.Element {
         </nav>
         <div className="space-y-3 border-t border-zinc-800 px-5 py-4">
           <div className="rounded-lg bg-amber-950 px-3 py-2 text-[11px] leading-snug text-amber-300">
-            <strong>Simulator</strong> — fake money and fake credentials only. Never use real keys
-            or customer data.
+            <strong>Sandbox only</strong> — no real money. Use test or sandbox keys only, never
+            production keys or customer data.
           </div>
           <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-500">
             <span
@@ -791,7 +793,7 @@ export default function App(): JSX.Element {
               <section>
                 <SectionHeader
                   title="Gateway apps"
-                  description="Fake merchant stores your app authenticates with. Set a default scenario per app."
+                  description="Merchant apps your code authenticates with. Each runs on the Simulator (pick a default scenario) or, optionally, the provider’s Real sandbox."
                 />
                 {apps.isPending && <p className="text-sm text-zinc-500">Loading…</p>}
                 {apps.isError && (

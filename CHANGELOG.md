@@ -16,6 +16,14 @@ All notable changes to this project are documented here. The format follows
 - Scenario engine, fake clock, callback delivery with retries and SSRF guard.
 - Parity replay suite with fidelity-badge enforcement (`pnpm parity`).
 - VitePress docs site, GHCR release workflow, Render + Neon + R2 deploy guide.
+- Optional Real sandbox mode per app: SSLCommerz (session, validation, IPN,
+  refund) and bKash tokenized checkout (grant, create, execute, status, refund)
+  proxied to the providers' sandboxes with AES-GCM encrypted keys
+  (`PAYSIM_SECRETS_KEY`). Nagad is marked as requiring merchant credentials.
+- Realistic checkout pages: bKash/Nagad wallet number, OTP and PIN steps and an
+  SSLCommerz cards / mobile banking / net banking picker, with a persistent
+  "PaySim sandbox — test only, no real money" label. No OTP/PIN/card values
+  are sent or stored.
 
 ### Changed
 

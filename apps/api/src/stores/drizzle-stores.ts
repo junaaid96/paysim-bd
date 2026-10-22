@@ -1,6 +1,7 @@
 // Drizzle implementation of PluginStores plus dashboard read queries.
 // Every write publishes to the SSE bus so the dashboard updates live.
 
+import { decryptJson, type StoredSandbox } from '../secrets.js';
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
 
 import {
@@ -58,7 +59,15 @@ function toApp(row: GatewayApp, workspaceKey: string): AppRecord {
     name: row.name,
     credentials: row.credentials,
     defaultScenarioId: row.defaultScenarioId,
+    sandbox: sandboxFromRow(row.sandbox as StoredSandbox | null),
   };
+}
+
+function sandboxFromRow(stored: StoredSandbox | null): AppRecord['sandbox'] {
+  const keys = stored?.keys ? decryptJson(stored.keys) : null;
+  // Real mode without readable keys degrades to the simulator.
+  const mode = stored?.mode === 'real' && keys ? 'real' : 'simulator';
+  return { mode, keys };
 }
 
 function toTxn(row: Transaction, workspaceKey: string): TxnRecord {
@@ -518,6 +527,25 @@ export function createQueries(db: Db) {
         .from(gatewayApps)
         .where(eq(gatewayApps.workspaceId, workspaceId));
       return rows.map((row) => toApp(row, workspaceKey));
+    },
+
+    async getAppSandboxRaw(id: string): Promise<StoredSandbox | null> {
+      const rows = await db.select().from(gatewayApps).where(eq(gatewayApps.id, id)).limit(1);
+      return (rows[0]?.sandbox as StoredSandbox | undefined) ?? null;
+    },
+
+    async updateAppSandbox(
+      workspaceKey: string,
+      id: string,
+      sandbox: StoredSandbox,
+    ): Promise<AppRecord | null> {
+      const rows = await db
+        .update(gatewayApps)
+        .set({ sandbox: sandbox as Record<string, unknown> })
+        .where(eq(gatewayApps.id, id))
+        .returning();
+      const row = rows[0];
+      return row ? toApp(row, workspaceKey) : null;
     },
 
     async updateAppDefaultScenario(

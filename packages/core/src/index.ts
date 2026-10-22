@@ -20,6 +20,7 @@ export {
   SpecEndpointSchema,
   SpecFieldSchema,
   TxnRecordSchema,
+  isRealSandbox,
 } from './plugin.js';
 export type {
   AppRecord,
@@ -36,6 +37,10 @@ export type {
   PluginLogger,
   PluginStores,
   KeyValueStore,
+  SandboxKeyField,
+  SandboxSupport,
+  SettleRefundInput,
+  SettleRefundResult,
   RecordDeliveryInput,
   RecordEventInput,
   ResolvedScenario,
@@ -82,3 +87,11 @@ export type {
   RefundSource,
   RefundStatus,
 } from './refund.js';
+export {
+  SANDBOX_LABEL,
+  WALLET_NUMBER,
+  cardCheckoutPage,
+  nextWalletStep,
+  walletCheckoutPage,
+} from './checkout-ui.js';
+export type { CardCheckoutInput, WalletCheckoutInput } from './checkout-ui.js';

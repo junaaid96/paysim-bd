@@ -26,3 +26,7 @@ Tokenized checkout documents no server callback: the customer browser follows yo
 - Magic: `merchantInvoiceNumber = SIM:<name>`.
 - Execute before verification → `2060`; double execute → `2062`; unknown paymentId → `2002`. Every payment code is a real documented code (refund codes 2071–2073 are simulator choices).
 - Tokens live in memory (restarts invalidate them) and lifetimes read the fake clock. The 2/hour grant limit is not enforced.
+
+## Real sandbox mode
+
+Optional per app: switch this gateway from the simulator to the provider's own sandbox in **Gateways**, without changing your client. See [Real sandbox mode](../concepts/real-sandbox).

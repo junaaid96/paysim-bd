@@ -184,7 +184,7 @@ describe('nagad routes', () => {
 
     const page = await request(app).get(`/nagad/checkout?paymentRefId=${paymentReferenceId}`);
     expect(page.status).toBe(200);
-    expect(page.text).toContain('SIMULATOR');
+    expect(page.text).toContain('PaySim sandbox — test only, no real money');
     expect(page.text).toContain('ORDER-M1');
 
     const res = await request(app)

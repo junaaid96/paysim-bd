@@ -24,6 +24,8 @@ export interface RefundEntry {
   status: 'completed' | 'failed';
   reason: string;
   failureReason?: string;
+  /** Provider refund reference (real-sandbox mode only). */
+  providerRefundId?: string;
   source: RefundSource;
   createdAt: string;
 }
@@ -88,6 +90,15 @@ export interface RefundRequest {
   /** Force a simulated decline (dashboard toggle); the reason marker also works. */
   simulateFailure?: boolean;
   refundIdPrefix?: string;
+  /**
+   * Real-sandbox settlement: called after validation, before the ledger
+   * write. A provider decline is recorded as a failed entry.
+   */
+  settle?: (input: {
+    amountMinor: number;
+    reason: string;
+    refundId: string;
+  }) => Promise<{ ok: boolean; failureReason?: string; providerRefundId?: string }>;
   /** Extra data merged into the refund event (e.g. redacted HTTP request). */
   eventData?: Record<string, unknown>;
 }
@@ -141,14 +152,26 @@ export async function processRefund(
     );
   }
   const reason = (request.reason ?? '').slice(0, 255);
-  const failed = request.simulateFailure === true || reason.includes(REFUND_FAIL_MARKER);
+  const refundId = generateRefundId(request.refundIdPrefix);
+  let failed: boolean;
+  let failureReason = 'Refund declined by the simulated gateway.';
+  let providerRefundId: string | undefined;
+  if (request.settle) {
+    const settled = await request.settle({ amountMinor: request.amountMinor, reason, refundId });
+    failed = !settled.ok;
+    if (settled.failureReason) failureReason = settled.failureReason.slice(0, 255);
+    providerRefundId = settled.providerRefundId;
+  } else {
+    failed = request.simulateFailure === true || reason.includes(REFUND_FAIL_MARKER);
+  }
   const entry: RefundEntry = {
-    refundId: generateRefundId(request.refundIdPrefix),
+    refundId,
     merchantRef,
     amountMinor: request.amountMinor,
     status: failed ? 'failed' : 'completed',
     reason,
-    ...(failed ? { failureReason: 'Refund declined by the simulated gateway.' } : {}),
+    ...(failed ? { failureReason } : {}),
+    ...(providerRefundId ? { providerRefundId } : {}),
     source: request.source,
     createdAt: ctx.clock.now(txn.workspaceId).toISOString(),
   };

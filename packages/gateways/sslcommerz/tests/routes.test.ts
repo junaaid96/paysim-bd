@@ -104,11 +104,11 @@ describe('sslcommerz routes', () => {
     expect(relative.body.status).toBe('FAILED');
   });
 
-  it('serves the mock checkout page with a SIMULATOR banner', async () => {
+  it('serves the mock checkout page with the sandbox label', async () => {
     const { sessionkey } = await initOk();
     const page = await request(app).get(`/gwprocess/v4/gw.php?SESSIONKEY=${sessionkey}`);
     expect(page.status).toBe(200);
-    expect(page.text).toContain('SIMULATOR');
+    expect(page.text).toContain('PaySim sandbox — test only, no real money');
     expect(page.text).toContain('ORDER-1');
     expect(page.text).toContain('value="success"');
     expect(page.text).toContain('value="fail"');
