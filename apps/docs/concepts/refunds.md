@@ -6,7 +6,7 @@ through each gateway's own refund API shape and through the dashboard.
 ## Rules (same for every gateway)
 
 - Only completed payments can be refunded: SSLCommerz `valid`, bKash
-  `completed` (executed), Nagad `success`.
+  `completed` (executed), Nagad `success`, Rocket `success`, Upay `success`.
 - Refunds can be split into as many partial refunds as you like, but the total
   can never exceed the payment amount. The check is one atomic database update,
   so concurrent refund calls cannot over-refund.
@@ -82,3 +82,11 @@ After a refund, `GET …/verify/payment/{paymentRefId}` also returns
 Open a completed payment and press **Refund**: enter the amount (or **Full**),
 an optional reason, and confirm. The API behind it is
 `POST /api/txns/:id/refunds` with `{amountMinor, reason?, idempotencyKey?, simulateFailure?}`.
+
+## Rocket
+
+DBBL documents no refund API. Rocket refunds (full or partial) are recorded from the dashboard; in real mode PaySim declines them and points you to the DBBL merchant panel.
+
+## Upay
+
+`POST /payment/bulk/refund/` with `[{txn_id, refund_amount}]`. Partial amounts work in the simulator; upstream partial support is unconfirmed.

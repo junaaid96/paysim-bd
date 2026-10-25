@@ -41,6 +41,26 @@
       "destination": "/api"
     },
     {
+      "source": "/ecomws/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/ecomm2/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/rocket/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/payment/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/upay/(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }

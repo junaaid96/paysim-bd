@@ -11,6 +11,8 @@ const REFUNDABLE: Record<string, string> = {
   sslcommerz: 'valid',
   bkash: 'completed',
   nagad: 'success',
+  rocket: 'success',
+  upay: 'success',
 };
 
 export function isRefundable(txn: TxnRecord): boolean {

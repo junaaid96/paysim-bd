@@ -16,7 +16,7 @@ export function esc(input: unknown): string {
 
 export const SANDBOX_LABEL = 'PaySim sandbox — test only, no real money';
 
-export type Brand = 'bkash' | 'nagad' | 'sslcommerz';
+export type Brand = 'bkash' | 'nagad' | 'rocket' | 'upay' | 'sslcommerz';
 
 const BRANDS: Record<
   Brand,
@@ -35,6 +35,20 @@ const BRANDS: Record<
     dark: '#b83e10',
     soft: '#fff1e8',
     head: 'linear-gradient(135deg,#f7931e,#ec3b23)',
+  },
+  rocket: {
+    name: 'Rocket',
+    primary: '#8c3494',
+    dark: '#6b2271',
+    soft: '#f6ecf7',
+    head: 'linear-gradient(135deg,#9b3fa3,#5e1d66)',
+  },
+  upay: {
+    name: 'Upay',
+    primary: '#0057a8',
+    dark: '#003f7a',
+    soft: '#fff8db',
+    head: 'linear-gradient(135deg,#0062bd,#003f7a 70%,#ffd200)',
   },
   sslcommerz: {
     name: 'SSLCommerz',
@@ -116,7 +130,7 @@ function header(brand: Brand, merchant: string, amount: string, currency: string
 }
 
 export interface WalletCheckoutInput {
-  brand: 'bkash' | 'nagad';
+  brand: 'bkash' | 'nagad' | 'rocket' | 'upay';
   /** Hidden field name + value identifying the payment (paymentId / paymentRefId). */
   idField: string;
   idValue: string;
@@ -138,6 +152,9 @@ export interface WalletCheckoutInput {
 const WALLET_HINTS = {
   bkash: { number: '01770618575', otp: '123456', pin: '12121' },
   nagad: { number: '01711000000', otp: '123456', pin: '1234' },
+  // Simulator-only hints (no published provider test wallets).
+  rocket: { number: '01900000001', otp: '123456', pin: '1234' },
+  upay: { number: '01800000000', otp: '123456', pin: '1234' },
 } as const;
 
 /** Bangladeshi mobile number shape: 11 digits starting 01. */

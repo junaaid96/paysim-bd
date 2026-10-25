@@ -45,9 +45,9 @@ The response carries `GatewayPageURL`. Open it to see the mock payment page, or 
 
 Back in the dashboard: the transaction appears with a timeline (events + callback attempts), a request inspector with copy-as-curl, and a replay button.
 
-Next: [Scenarios](/concepts/scenarios) · [Fake clock](/concepts/clock) · [bKash](/gateways/bkash) · [Nagad](/gateways/nagad)
+Next: [Scenarios](/concepts/scenarios) · [Fake clock](/concepts/clock) · [bKash](/gateways/bkash) · [Nagad](/gateways/nagad) · [Rocket](/gateways/rocket) · [Upay](/gateways/upay)
 
 ## Next: Real sandbox (optional extra)
 
-Once your flows pass on the simulator, you can rehearse SSLCommerz, bKash and Nagad against the providers' own sandboxes from the
+Once your flows pass on the simulator, you can rehearse SSLCommerz, bKash, Nagad, Rocket and Upay against the providers' own sandboxes from the
 **Real sandbox** page in the sidebar. See [Real sandbox mode](./concepts/real-sandbox).

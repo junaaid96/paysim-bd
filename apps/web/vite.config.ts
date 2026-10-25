@@ -26,6 +26,11 @@ export default defineConfig({
       '/bkash/': 'http://127.0.0.1:3001',
       '/remote-payment-gateway-1.0/': 'http://127.0.0.1:3001',
       '/nagad/': 'http://127.0.0.1:3001',
+      '/ecomws/': 'http://127.0.0.1:3001',
+      '/ecomm2/': 'http://127.0.0.1:3001',
+      '/rocket/': 'http://127.0.0.1:3001',
+      '/payment/': 'http://127.0.0.1:3001',
+      '/upay/': 'http://127.0.0.1:3001',
     },
   },
   preview: {

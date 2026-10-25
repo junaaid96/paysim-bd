@@ -11,7 +11,7 @@ export const MAX_RESPONSE_SNIPPET_BYTES = 2 * 1024;
 export const DEFAULT_CURRENCY = 'BDT';
 
 /** Gateways the simulator will support, in build order. */
-export const SUPPORTED_GATEWAYS = ['sslcommerz', 'bkash', 'nagad'] as const;
+export const SUPPORTED_GATEWAYS = ['sslcommerz', 'bkash', 'nagad', 'rocket', 'upay'] as const;
 export type SupportedGateway = (typeof SUPPORTED_GATEWAYS)[number];
 
 /** Key of the single workspace auto-created in local mode. */

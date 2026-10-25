@@ -1,0 +1,65 @@
+{
+  "gateway": "rocket",
+  "displayName": "Rocket",
+  "version": "v1",
+  "fidelity": "unverified",
+  "docSources": [
+    "https://ecomtest.dutchbanglabank.com/ecomws/dbblecomtxn?wsdl",
+    "https://github.com/fattah/banglapay/blob/HEAD/api/dbbl_lib.php",
+    "https://github.com/fattah/banglapay/blob/HEAD/dbblcallback.php"
+  ],
+  "sandboxHosts": ["ecomtest.dutchbanglabank.com"],
+  "productionHosts": ["ecom1.dutchbanglabank.com"],
+  "contentTypes": ["text/xml"],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/ecomws/dbblecomtxn",
+      "purpose": "SOAP getransid(userid,pwd,amount,cardtype,txnrefnum,clientip): open a session, returns 'TRANSACTION_ID: <id>'",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://ecomtest.dutchbanglabank.com/ecomws/dbblecomtxn?wsdl",
+        "https://github.com/fattah/banglapay/blob/HEAD/api/dbbl_lib.php"
+      ],
+      "notes": "Namespace http://ecom.dbbl/. Amount in paisa (legacy jar; unconfirmed for SOAP). Bad credentials -> 'Wrong Merchant ID' (observed live). Duplicate/invalid-input error strings are simulator-invented. Magic scenario SIM:<name> in txnrefnum."
+    },
+    {
+      "method": "POST",
+      "path": "/ecomws/dbblecomtxn",
+      "purpose": "SOAP getresult / getresultrocket(userid,pwd,transid,clientip): payment result lines",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://ecomtest.dutchbanglabank.com/ecomws/dbblecomtxn?wsdl",
+        "https://github.com/fattah/banglapay/blob/HEAD/api/dbbl_lib.php"
+      ],
+      "notes": "Success 'RESULT: OK / RESULT_PS: FINISHED / RESULT_CODE: 000'; cancel 'RESULT: TIMEOUT / RESULT_PS: CANCELLED' (banglapay samples). FAILED (116) and PENDING lines are simulator-invented. Unknown transid -> 'RESULT>Invalid Transaction ID' (observed). The difference between getresult and getresultrocket is undocumented; the simulator answers both the same."
+    },
+    {
+      "method": "GET",
+      "path": "/ecomm2/ClientHandler",
+      "purpose": "Customer payment page ?card_type=<code>&trans_id=<id> (mock Rocket wallet: number -> OTP -> PIN)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": ["https://github.com/fattah/banglapay/blob/HEAD/api/dbbl_lib.php"],
+      "notes": "In real mode PaySim 302s to DBBL's own ClientHandler."
+    },
+    {
+      "method": "POST",
+      "path": "/ecomm2/ClientHandler",
+      "purpose": "Simulator-only mock page step/button handler; ends with the browser return",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": ["https://github.com/fattah/banglapay/blob/HEAD/dbblcallback.php"],
+      "notes": "Browser returns to the app's return_url with ?trans_id=<id> (unsigned; confirm with getresult)."
+    }
+  ],
+  "fields": [],
+  "hashRules": [],
+  "notes": [
+    "DBBL publishes the WSDL but no prose docs; message formats come from the legacy banglapay integration.",
+    "No IPN and no refund API are documented. Simulator refunds are dashboard/ledger only; real refunds happen in the DBBL merchant panel.",
+    "The Rocket cardtype code is assigned by DBBL per merchant."
+  ]
+}

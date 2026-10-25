@@ -35,6 +35,8 @@ export default defineConfig({
           { text: 'SSLCommerz', link: '/gateways/sslcommerz' },
           { text: 'bKash', link: '/gateways/bkash' },
           { text: 'Nagad', link: '/gateways/nagad' },
+          { text: 'Rocket', link: '/gateways/rocket' },
+          { text: 'Upay', link: '/gateways/upay' },
         ],
       },
       {

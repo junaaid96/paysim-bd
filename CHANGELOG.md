@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Rocket (DBBL) and Upay (UCB Fintech) gateway plugins: wallet checkout
+  (number → OTP → PIN), live feed events, full/partial refunds, dashboard,
+  docs. Optional real-sandbox adapters (DBBL SOAP service; Upay PGW per
+  community docs), active only with saved merchant credentials.
 - Phase 0 scaffold: pnpm monorepo, Express API, Drizzle migrations, storage
   drivers, React dashboard, CI, Docker Compose.
 - Hosted playground on Vercel + Neon (`vercel.json`, `api/index.js`).

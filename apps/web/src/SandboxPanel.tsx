@@ -17,7 +17,7 @@ import {
 } from './api';
 import { EmptyState, SectionHeader } from './ui';
 
-const ORDER = ['sslcommerz', 'bkash', 'nagad'];
+const ORDER = ['sslcommerz', 'bkash', 'nagad', 'rocket', 'upay'];
 
 type Status = 'not_configured' | 'untested' | 'connected' | 'error';
 
@@ -293,10 +293,10 @@ export default function RealSandboxPage({
         </div>
         <p>
           PaySim works fully without this page: every store uses the simulator by default. If you
-          have sandbox keys from SSLCommerz, bKash or Nagad, save them here per store, test the
-          connection and switch it on. Your app keeps calling the same PaySim endpoints, and
-          webhooks, the live feed and refunds keep working. Scenarios don’t apply to stores on the
-          real sandbox.
+          have sandbox keys from SSLCommerz, bKash, Nagad, Rocket (DBBL) or Upay, save them here per
+          store, test the connection and switch it on. Your app keeps calling the same PaySim
+          endpoints, and webhooks, the live feed and refunds keep working. Scenarios don’t apply to
+          stores on the real sandbox.
         </p>
         <p className="text-xs text-zinc-500">
           Sandbox keys only, never production keys. Keys are encrypted at rest and only shown
