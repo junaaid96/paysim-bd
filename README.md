@@ -5,7 +5,7 @@
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-teal.svg)](CONTRIBUTING.md)
 
 > **SANDBOX ONLY — no real money.** PaySim BD imitates Bangladeshi payment
-> gateways (SSLCommerz, bKash, Nagad) for development and testing. It never
+> gateways (SSLCommerz, bKash, Nagad, Rocket, Upay) for development and testing. It never
 > talks to production gateways or moves real money. The optional Real sandbox
 > mode only forwards to the providers' official sandboxes, with sandbox keys you
 > save (encrypted at rest).
@@ -18,7 +18,7 @@ request your app makes.
 **Live playground:** [paysim-bd-codejborg.vercel.app](https://paysim-bd-codejborg.vercel.app) ·
 API health: [/api/health](https://paysim-bd-codejborg.vercel.app/api/health)
 
-**Status: all phases done.** SSLCommerz, bKash and Nagad plugins, the scenario
+**Status: all phases done.** SSLCommerz, bKash, Nagad, Rocket and Upay plugins, the scenario
 engine, the parity suite and the docs site are all in (see the
 [roadmap](#roadmap)). Docs: **https://junaaid96.github.io/paysim-bd/**
 
@@ -38,7 +38,7 @@ deterministic stand-in you fully control.
   banking), each with a persistent "PaySim sandbox — test only, no real money"
   label and test-value hints. OTP, PIN and card fields are never sent or stored.
 - **Real sandbox (optional extra)** — its own sidebar page. Per store, save the
-  provider's sandbox keys (SSLCommerz, bKash, Nagad), test the connection and
+  provider's sandbox keys (SSLCommerz, bKash, Nagad, Rocket, Upay), test the connection and
   switch it on, without changing your app: PaySim proxies the provider calls and
   keeps the timeline, live feed, callbacks and refunds working. The simulator
   stays the default. See [Real sandbox](#real-sandbox-optional-extra).
@@ -69,6 +69,10 @@ One run through the simulator, from setup to a settled payment.
 | **Get started** — copy the base URL, pick a `SIM:` marker for the outcome you want, and fire your first test payment with the ready-made curl. | **SSLCommerz checkout** — pick cards, mobile banking or net banking with test values; simulator controls cover failure and cancel.                                    |
 | ![bKash checkout](docs/screenshots/checkout-bkash.png)                                                                                         | ![Nagad checkout](docs/screenshots/checkout-nagad.png)                                                                                                                |
 | **bKash checkout** — wallet number, OTP and PIN steps after grant-token and create payment (any test values); fail or cancel on demand.        | **Nagad checkout** — reached after the RSA-sealed initialize and complete calls; account number, OTP and PIN steps, or fail/cancel.                                   |
+| ![Rocket checkout](docs/screenshots/checkout-rocket.png)                                                                                       | ![Upay checkout](docs/screenshots/checkout-upay.png)                                                                                                                  |
+| **Rocket checkout** — DBBL getransid opens the session; account number, OTP and PIN steps, or fail/cancel.                                     | **Upay checkout** — after merchant-auth and payment-init; account number, OTP and PIN steps, or fail/cancel.                                                          |
+| ![Real sandbox](docs/screenshots/real-sandbox.png)                                                                                             |                                                                                                                                                                       |
+| **Real sandbox (Extra)** — optional sidebar page: save a store's provider keys, test the connection, switch it on.                             |                                                                                                                                                                       |
 | ![Live event feed](docs/screenshots/live-feed.png)                                                                                             | ![Transaction timeline](docs/screenshots/transaction-timeline.png)                                                                                                    |
 | **Live event feed** — every gateway event streams in as it happens, next to totals per outcome and the latest transactions.                    | **Test payment timeline** — one SSLCommerz payment end to end: init, scenario attached, checkout viewed, success, IPN, each with a redacted payload and copy-as-curl. |
 | ![Transactions](docs/screenshots/transactions.png)                                                                                             | ![Scenarios & clock](docs/screenshots/scenarios.png)                                                                                                                  |
@@ -84,11 +88,13 @@ sandbox** in the sidebar, save a store's sandbox keys, press **Test connection**
 and switch it on. Each store shows _Not configured_, _Connected_ or _Error_. Your app keeps calling PaySim with
 the same PaySim credentials, so client code (QuickFood included) needs no change.
 
-| Gateway    | Real sandbox               | Provider calls                                                                                                                                                       |
-| ---------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SSLCommerz | Available                  | `sandbox.sslcommerz.com` session API, validation API (every return and IPN), refund API                                                                              |
-| bKash      | Available                  | Tokenized checkout sandbox: grant token (cached in `kv_entries`), create, execute, payment status, refund                                                            |
-| Nagad      | Needs merchant credentials | Initialize and complete (RSA-encrypted, signed), verify payment, refund. Active only with merchant ID + merchant private key + Nagad public key; otherwise simulator |
+| Gateway    | Real sandbox                         | Provider calls                                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SSLCommerz | Available                            | `sandbox.sslcommerz.com` session API, validation API (every return and IPN), refund API                                                                                                                                                                                                |
+| bKash      | Available                            | Tokenized checkout sandbox: grant token (cached in `kv_entries`), create, execute, payment status, refund                                                                                                                                                                              |
+| Nagad      | Needs merchant credentials           | Initialize and complete (RSA-encrypted, signed), verify payment, refund. Active only with merchant ID + merchant private key + Nagad public key; otherwise simulator                                                                                                                   |
+| Rocket     | Needs merchant credentials from DBBL | DBBL SOAP `getransid`, `getresult`/`getresultrocket`, redirect to DBBL `ClientHandler` ([WSDL](https://ecomtest.dutchbanglabank.com/ecomws/dbblecomtxn?wsdl), [banglapay](https://github.com/fattah/banglapay)). No refund API. Active only with user ID + password + Rocket card type |
+| Upay       | Needs merchant credentials from Upay | merchant-auth, payment-init, single-payment-status, bulk refund ([BDPayGate](https://bdpaygate.github.io/docs/upay), [laravel-bdpaygate](https://github.com/byteminus/laravel-bdpaygate)); community-documented, unverified. Active only with Upay merchant credentials                |
 
 - Keys are AES-256-GCM encrypted with `PAYSIM_SECRETS_KEY` and never returned by
   the API (the dashboard shows identifiers and a masked hint).
@@ -100,6 +106,10 @@ the same PaySim credentials, so client code (QuickFood included) needs no change
 - Nagad issues sandbox keys only to registered merchants and only answers
   allow-listed servers, so its connection test is an offline key check and the
   adapter is covered by tests with mocked Nagad responses.
+- Rocket and Upay real adapters are unit-tested with mocked provider replies only;
+  both need merchant credentials. Open questions are listed in their docs pages
+  (Rocket card type code, paisa amounts, getresult vs getresultrocket, invented
+  error strings; Upay partial refunds and live host). Neither documents an IPN.
 
 Details: [docs → Real sandbox mode](https://junaaid96.github.io/paysim-bd/concepts/real-sandbox).
 
@@ -132,6 +142,8 @@ Code: [quickfood_backend/payments](https://github.com/junaaid96/quickfood_backen
 | SSLCommerz | Session init + hosted page + IPN      | docs-only  | `value_d` = `SIM:<name>`               |
 | bKash      | Tokenized checkout (v2, no agreement) | docs-only  | `merchantInvoiceNumber` = `SIM:<name>` |
 | Nagad      | Sealed checkout (community flow)      | unverified | `orderId` = `SIM:<name>[:suffix]`      |
+| Rocket     | DBBL SOAP + ClientHandler             | unverified | `txnrefnum` = `SIM:<name>[:suffix]`    |
+| Upay       | Merchant auth + payment init          | unverified | `invoice_id` = `SIM:<name>[:suffix]`   |
 
 Refunds work on every gateway (full or partial, idempotent, never above the
 paid amount). See [Refunds](https://junaaid96.github.io/paysim-bd/concepts/refunds)
@@ -262,7 +274,8 @@ to receive callbacks on your own machine.
 
 In every mode the dashboard origin doubles as the gateway base URL: point your
 app at it and call `/gwprocess/*`, `/validator/*`, `/v2/tokenized-checkout/*`,
-`/bkash/*`, `/remote-payment-gateway-1.0/*` or `/nagad/*` directly (Vercel
+`/bkash/*`, `/remote-payment-gateway-1.0/*`, `/nagad/*`, `/ecomws/*`,
+`/ecomm2/*`, `/rocket/*`, `/payment/*` or `/upay/*` directly (Vercel
 rewrites, the compose nginx proxy and the Vite dev proxy all route these to
 the API).
 
@@ -299,7 +312,8 @@ see the [deploy guide](https://junaaid96.github.io/paysim-bd/deploy).
 - [x] Phase 3: bKash plugin
 - [x] Phase 4: Nagad plugin
 - [x] Phase 5: parity suite, docs site, GHCR release, hosted deploy guide
-- [x] Refunds: full/partial refunds for SSLCommerz, bKash and Nagad, dashboard refund action
+- [x] Rocket and Upay plugins (simulator + optional real sandbox)
+- [x] Refunds: full/partial refunds for SSLCommerz, bKash, Nagad, Rocket and Upay, dashboard refund action
 
 ## Contributing
 
@@ -310,7 +324,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
 ## Disclaimer
 
 PaySim BD is an independent open-source project and is not affiliated with,
-endorsed by, or connected to SSLCommerz, bKash, Nagad, or any payment provider.
+endorsed by, or connected to SSLCommerz, bKash, Nagad, Rocket, Upay, DBBL, UCB Fintech, or any payment provider.
 Gateway names are used only to describe compatibility.
 
 ## License

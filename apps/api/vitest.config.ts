@@ -12,6 +12,12 @@ export default defineConfig({
       '@paysim/gateway-nagad': fileURLToPath(
         new URL('../../packages/gateways/nagad/src/index.ts', import.meta.url),
       ),
+      '@paysim/gateway-rocket': fileURLToPath(
+        new URL('../../packages/gateways/rocket/src/index.ts', import.meta.url),
+      ),
+      '@paysim/gateway-upay': fileURLToPath(
+        new URL('../../packages/gateways/upay/src/index.ts', import.meta.url),
+      ),
       '@paysim/parity': fileURLToPath(
         new URL('../../packages/parity/src/index.ts', import.meta.url),
       ),

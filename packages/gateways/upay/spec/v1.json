@@ -1,0 +1,100 @@
+{
+  "gateway": "upay",
+  "displayName": "Upay",
+  "version": "v1",
+  "fidelity": "unverified",
+  "docSources": [
+    "https://bdpaygate.github.io/docs/upay",
+    "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/src/Drivers/UpayGateway.php",
+    "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/tests/Conformance/UpayScenario.php"
+  ],
+  "sandboxHosts": ["uat-pg.upay.systems"],
+  "productionHosts": ["pg.upaysystem.com"],
+  "contentTypes": ["application/json"],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/payment/merchant-auth/",
+      "purpose": "Exchange merchant_id + merchant_key for a bearer token (code MAS2001, data.token)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://bdpaygate.github.io/docs/upay",
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/src/Drivers/UpayGateway.php"
+      ],
+      "notes": "Token goes in 'Authorization: UPAY <token>'. BDPayGate caches it ~10 min and retries once on 401/403. Bad-credential reply code is simulator-invented (MAE4001)."
+    },
+    {
+      "method": "POST",
+      "path": "/payment/merchant-payment-init/",
+      "purpose": "Open a payment session; returns gateway_url (code MPIS2002)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://bdpaygate.github.io/docs/upay",
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/src/Drivers/UpayGateway.php",
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/tests/Conformance/UpayScenario.php"
+      ],
+      "notes": "Body: date, txn_id, invoice_id, amount, transaction_currency_code, redirect_url, merchant_id/name/code/country_code/city/category_code/mobile, additional_info. Duplicate txn_id -> DTP4003. Magic scenario marker SIM:<name> in invoice_id or txn_id."
+    },
+    {
+      "method": "GET",
+      "path": "/payment/single-payment-status/{txn_id}/",
+      "purpose": "Authoritative payment status (code PS2005; 404 PNF4012 when unknown)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/src/Drivers/UpayGateway.php",
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/tests/Conformance/UpayScenario.php"
+      ],
+      "notes": "status: success | failed | expired | cancelled | pending; amount is a number."
+    },
+    {
+      "method": "POST",
+      "path": "/payment/bulk/refund/",
+      "purpose": "Refund one or more payments: [{txn_id, refund_amount}] (code MPR_200)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [
+        "https://bdpaygate.github.io/docs/upay",
+        "https://github.com/byteminus/laravel-bdpaygate/blob/HEAD/src/Drivers/UpayGateway.php"
+      ],
+      "notes": "Response data.success_list / data.failed_list{txn_id:{en,bn}}. 'Your request is under process' = accepted, pending. Partial refund_amount is accepted by the simulator but unconfirmed upstream (BDPayGate sends full refunds only)."
+    },
+    {
+      "method": "GET",
+      "path": "/upay/checkout",
+      "purpose": "Simulator-only mock Upay wallet page (number -> OTP -> PIN)",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "No official counterpart; the real page is Upay's gateway_url."
+    },
+    {
+      "method": "POST",
+      "path": "/upay/checkout",
+      "purpose": "Mock page step/button handler; ends with the browser redirect",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "Redirect appends status + invoice_id to redirect_url (unsigned; always confirm with single-payment-status)."
+    },
+    {
+      "method": "GET",
+      "path": "/upay/sandbox/callback/{txnId}",
+      "purpose": "Simulator-only return hop for real-sandbox payments",
+      "implemented": true,
+      "fidelity": "unverified",
+      "sources": [],
+      "notes": "PaySim confirms with Upay's single-payment-status, then forwards to the merchant redirect_url."
+    }
+  ],
+  "fields": [],
+  "hashRules": [],
+  "notes": [
+    "Upay's official PGW API v4.1.0 document is not public; every path here comes from community integrations that cite it.",
+    "No server-to-server IPN is documented: the browser redirect is the only push signal, so the simulator records it as a live-feed event instead of POSTing a webhook.",
+    "Every path ends with '/'. Live access requires Upay to allow-list the server IP.",
+    "The live host pg.upaysystem.com comes from BDPayGate only (unconfirmed)."
+  ]
+}

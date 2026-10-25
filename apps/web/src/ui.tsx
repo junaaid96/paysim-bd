@@ -32,6 +32,8 @@ export const GATEWAYS: Record<string, { name: string; mark: string; tone: string
   sslcommerz: { name: 'SSLCommerz', mark: 'SC', tone: 'bg-sky-900 text-sky-300' },
   bkash: { name: 'bKash', mark: 'bK', tone: 'bg-pink-950 text-pink-300' },
   nagad: { name: 'Nagad', mark: 'Ng', tone: 'bg-orange-950 text-orange-300' },
+  rocket: { name: 'Rocket', mark: 'Rk', tone: 'bg-purple-950 text-purple-300' },
+  upay: { name: 'Upay', mark: 'Up', tone: 'bg-blue-950 text-yellow-300' },
 };
 
 export function gatewayName(gateway: string): string {

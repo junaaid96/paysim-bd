@@ -29,6 +29,8 @@ features:
 | SSLCommerz | Session init + hosted page + IPN | docs-only  | `value_d` = `SIM:<name>`               |
 | bKash      | Tokenized checkout (v2)          | docs-only  | `merchantInvoiceNumber` = `SIM:<name>` |
 | Nagad      | Sealed checkout (community flow) | unverified | `orderId` = `SIM:<name>[:suffix]`      |
+| Rocket     | DBBL SOAP + ClientHandler        | unverified | `txnrefnum` = `SIM:<name>[:suffix]`    |
+| Upay       | Merchant auth + payment init     | unverified | `invoice_id` = `SIM:<name>[:suffix]`   |
 
 No official Nagad docs are publicly reachable, so every Nagad field is marked `unverified`. See [Nagad](/gateways/nagad).
 

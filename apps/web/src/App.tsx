@@ -98,9 +98,10 @@ function FidelityBadge({ gateway }: { gateway: string }): JSX.Element {
   );
 }
 
-/** Human reference per gateway: invoice id, or the sim handle for bKash/Nagad. */
+/** Human reference per gateway: invoice id, or the sim handle for bKash/Nagad/Upay. */
 function txnReference(txn: TxnRecord): string {
-  if (txn.gateway === 'bkash' || txn.gateway === 'nagad') return txn.gatewaySessionKey ?? txn.id;
+  if (txn.gateway === 'bkash' || txn.gateway === 'nagad' || txn.gateway === 'upay')
+    return txn.gatewaySessionKey ?? txn.id;
   return txn.gatewayTxnId ?? txn.id;
 }
 
@@ -818,7 +819,7 @@ export default function App(): JSX.Element {
               <section>
                 <SectionHeader
                   title="New gateway app"
-                  description="Add another fake store, wallet merchant or Nagad merchant."
+                  description="Add another fake store, wallet merchant, Nagad, Rocket or Upay merchant."
                 />
                 <CreateAppForm workspace={workspace} />
               </section>

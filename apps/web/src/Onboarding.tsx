@@ -3,7 +3,7 @@ import { useState, type JSX } from 'react';
 
 import { createApp, fetchScenarios } from './api';
 import { copyText } from './curl';
-import { GatewayMark } from './ui';
+import { GatewayMark, gatewayName } from './ui';
 
 interface GatewayGuide {
   gateway: string;
@@ -37,6 +37,20 @@ const GUIDES: GatewayGuide[] = [
     init: 'POST /remote-payment-gateway-1.0/api/dfs/check-out/initialize/:merchantId/:orderId',
     magicField: 'orderId',
     magicExample: 'SIM:immediate-success:my-order-1',
+  },
+  {
+    gateway: 'rocket',
+    displayName: 'Rocket',
+    init: 'POST /ecomws/dbblecomtxn (SOAP getransid)',
+    magicField: 'txnrefnum',
+    magicExample: 'SIM:immediate-success:my-order-1',
+  },
+  {
+    gateway: 'upay',
+    displayName: 'Upay',
+    init: 'POST /payment/merchant-payment-init/ (after /payment/merchant-auth/)',
+    magicField: 'invoice_id',
+    magicExample: 'SIM:immediate-success:inv-1',
   },
 ];
 
@@ -142,6 +156,15 @@ const CREDENTIAL_FIELDS: Record<string, CredentialField[]> = {
       hint: 'RSA public key (PEM or base64) — used to seal Nagad payloads',
     },
   ],
+  rocket: [
+    { key: 'userid', label: 'userid' },
+    { key: 'pwd', label: 'pwd', secret: true, hint: 'at least 8 characters' },
+    { key: 'return_url', label: 'return_url', hint: 'where the browser returns with ?trans_id=' },
+  ],
+  upay: [
+    { key: 'merchant_id', label: 'merchant_id' },
+    { key: 'merchant_key', label: 'merchant_key', secret: true, hint: 'at least 8 characters' },
+  ],
 };
 
 function demoCredentials(gateway: string): Record<string, string> {
@@ -156,6 +179,19 @@ function demoCredentials(gateway: string): Record<string, string> {
   }
   if (gateway === 'nagad') {
     return { merchant_id: `SIM-MERCHANT-${suffix.toUpperCase()}`, merchant_number: '01700000000' };
+  }
+  if (gateway === 'rocket') {
+    return {
+      userid: `SIM-ROCKET-${suffix.toUpperCase()}`,
+      pwd: 'sim-rocket-pwd',
+      return_url: 'http://localhost:3000/rocket/return',
+    };
+  }
+  if (gateway === 'upay') {
+    return {
+      merchant_id: `SIM-UPAY-${suffix.toUpperCase()}`,
+      merchant_key: 'sim-upay-merchant-key',
+    };
   }
   return { store_id: `testbox-${suffix}`, store_passwd: 'qwerty' };
 }
@@ -190,7 +226,7 @@ export function CreateAppForm({ workspace }: { workspace: string }): JSX.Element
   return (
     <div className="card p-4 text-sm">
       <div className="flex flex-wrap gap-1.5">
-        {(['sslcommerz', 'bkash', 'nagad'] as const).map((id) => (
+        {(['sslcommerz', 'bkash', 'nagad', 'rocket', 'upay'] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -205,7 +241,7 @@ export function CreateAppForm({ workspace }: { workspace: string }): JSX.Element
             }`}
           >
             <GatewayMark gateway={id} size="sm" />
-            {id === 'sslcommerz' ? 'SSLCommerz' : id === 'bkash' ? 'bKash' : 'Nagad'}
+            {gatewayName(id)}
           </button>
         ))}
       </div>
@@ -321,7 +357,7 @@ export default function Onboarding({ workspace }: { workspace: string }): JSX.El
         <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="eyebrow">Get started</div>
         <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-100">
-          Test SSLCommerz, bKash and Nagad flows without a real sandbox
+          Test SSLCommerz, bKash, Nagad, Rocket and Upay flows without a real sandbox
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-400">
           PaySim BD imitates the gateways&apos; APIs and hosted checkout pages. Drive success,
@@ -386,6 +422,15 @@ export default function Onboarding({ workspace }: { workspace: string }): JSX.El
               <li>
                 <strong className="text-zinc-300">Nagad</strong> — needs credentials Nagad issues to
                 registered merchants (merchant ID and key pair); until then it uses the simulator.
+              </li>
+              <li>
+                <strong className="text-zinc-300">Rocket</strong> — needs merchant credentials from
+                DBBL (user ID, password, Rocket card type); no refund API, refund in DBBL&apos;s
+                panel.
+              </li>
+              <li>
+                <strong className="text-zinc-300">Upay</strong> — needs merchant credentials from
+                Upay (UCB Fintech); endpoints follow community docs and are unverified.
               </li>
             </ul>
           </div>
