@@ -55,6 +55,9 @@ export interface BootedApp {
   simBaseUrl: string;
 }
 
+/** Arbitrary constant key for the boot-time seeding advisory lock. */
+const SEED_LOCK_KEY = 72_405_117;
+
 export async function bootApp(options: BootOptions): Promise<BootedApp> {
   const { env, logger, storage } = options;
   const { client, db } = createDb(env.DATABASE_URL, { max: options.poolMax ?? env.DB_POOL_MAX });
@@ -72,10 +75,22 @@ export async function bootApp(options: BootOptions): Promise<BootedApp> {
     const stores = createDrizzleStores({ db, bus, storage });
     const queries = createQueries(db);
     const plugins = loadPlugins();
-    for (const plugin of plugins) {
-      const app = await ensureDefaultGatewayApp({ queries, stores }, workspace, plugin);
-      logger.info({ plugin: plugin.name, app: app.name }, 'gateway app ready');
-    }
+    // Serverless cold starts boot several instances at once. Without a lock
+    // each one sees "no default app yet" and inserts its own copy, so seed
+    // under a transaction-scoped advisory lock and use that same transaction
+    // for the check-then-insert.
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${SEED_LOCK_KEY})`);
+      const txDb = tx as unknown as Db;
+      const seedDeps = {
+        queries: createQueries(txDb),
+        stores: createDrizzleStores({ db: txDb, bus, storage }),
+      };
+      for (const plugin of plugins) {
+        const app = await ensureDefaultGatewayApp(seedDeps, workspace, plugin);
+        logger.info({ plugin: plugin.name, app: app.name }, 'gateway app ready');
+      }
+    });
     const seeded = await ensureBuiltinScenarios(db, plugins);
     if (seeded > 0) logger.info({ seeded }, 'built-in scenarios seeded');
 
