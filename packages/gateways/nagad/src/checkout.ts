@@ -13,6 +13,8 @@ export interface CompleteCheckoutInput {
   ctx: PluginContext;
   txn: TxnRecord;
   outcome: CheckoutAction;
+  /** Real-sandbox mode: Nagad's issuer reference replaces the sim trxId. */
+  providerTrxId?: string;
 }
 
 export interface CompleteCheckoutResult {
@@ -29,7 +31,7 @@ export async function completeCheckout(
   const kind = callbackKindFor(outcome);
   const status = kind === 'success' ? 'Success' : kind === 'fail' ? 'Fail' : 'Cancel';
   const metadataPatch: Record<string, unknown> =
-    status === 'Success' ? { trxId: generateSimTrxId() } : {};
+    status === 'Success' ? { trxId: input.providerTrxId || generateSimTrxId() } : {};
   const updated = await ctx.stores.transitionTransaction(
     txn.id,
     target,

@@ -37,11 +37,11 @@ deterministic stand-in you fully control.
   OTP, PIN) and an SSLCommerz method picker (cards, mobile banking, net
   banking), each with a persistent "PaySim sandbox — test only, no real money"
   label and test-value hints. OTP, PIN and card fields are never sent or stored.
-- **Optional Real sandbox mode** — per app, switch from the simulator to the
-  provider's own sandbox (SSLCommerz and bKash) without changing your app: PaySim
-  proxies session/create, validation/execute, query and refunds, and keeps the
-  timeline, live feed and callbacks working. Nagad needs merchant credentials
-  and stays on the simulator. See [Real sandbox mode](#real-sandbox-mode-optional).
+- **Real sandbox (optional extra)** — its own sidebar page. Per store, save the
+  provider's sandbox keys (SSLCommerz, bKash, Nagad), test the connection and
+  switch it on, without changing your app: PaySim proxies the provider calls and
+  keeps the timeline, live feed, callbacks and refunds working. The simulator
+  stays the default. See [Real sandbox](#real-sandbox-optional-extra).
 - **Scenario engine** — choose the outcome of each payment (success, failure,
   cancel, pending, timeout) instead of hoping the sandbox cooperates.
 - **Refunds** — full and partial refunds on all three gateways through their
@@ -73,21 +73,22 @@ One run through the simulator, from setup to a settled payment.
 | **Live event feed** — every gateway event streams in as it happens, next to totals per outcome and the latest transactions.                    | **Test payment timeline** — one SSLCommerz payment end to end: init, scenario attached, checkout viewed, success, IPN, each with a redacted payload and copy-as-curl. |
 | ![Transactions](docs/screenshots/transactions.png)                                                                                             | ![Scenarios & clock](docs/screenshots/scenarios.png)                                                                                                                  |
 | **Transactions** — filter by gateway or search by reference; any row opens its full request/callback timeline.                                 | **Scenarios & clock** — the per-gateway scenario catalog plus a fake clock to fast-forward expiries and delayed callbacks.                                            |
-| ![Gateways](docs/screenshots/gateways.png)                                                                                                     |                                                                                                                                                                       |
-| **Gateways** — merchant apps per gateway: default scenario plus the Simulator / Real sandbox switch and masked sandbox keys.                   |                                                                                                                                                                       |
+| ![Gateways](docs/screenshots/gateways.png)                                                                                                     | ![Real sandbox](docs/screenshots/real-sandbox.png)                                                                                                                    |
+| **Gateways** — fake merchant stores per gateway with a default scenario each.                                                                  | **Real sandbox (optional extra)** — per-store sandbox keys, connection test, status and an on/off switch.                                                             |
 
-## Real sandbox mode (optional)
+## Real sandbox (optional extra)
 
-The simulator is the default for every app. When you want a final rehearsal
-against a provider's own sandbox, open **Gateways**, save that gateway's sandbox
-keys and switch the app to **Real sandbox**. Your app keeps calling PaySim with
+The simulator is the default for every store and nothing about it changes. When
+you want a final rehearsal against a provider's own sandbox, open **Real
+sandbox** in the sidebar, save a store's sandbox keys, press **Test connection**
+and switch it on. Each store shows _Not configured_, _Connected_ or _Error_. Your app keeps calling PaySim with
 the same PaySim credentials, so client code (QuickFood included) needs no change.
 
-| Gateway    | Real sandbox                  | Provider calls                                                                                            |
-| ---------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| SSLCommerz | Available                     | `sandbox.sslcommerz.com` session API, validation API (every return and IPN), refund API                   |
-| bKash      | Available                     | Tokenized checkout sandbox: grant token (cached in `kv_entries`), create, execute, payment status, refund |
-| Nagad      | Requires merchant credentials | Not offered; Nagad issues sandbox keys only to registered merchants                                       |
+| Gateway    | Real sandbox               | Provider calls                                                                                                                                                       |
+| ---------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SSLCommerz | Available                  | `sandbox.sslcommerz.com` session API, validation API (every return and IPN), refund API                                                                              |
+| bKash      | Available                  | Tokenized checkout sandbox: grant token (cached in `kv_entries`), create, execute, payment status, refund                                                            |
+| Nagad      | Needs merchant credentials | Initialize and complete (RSA-encrypted, signed), verify payment, refund. Active only with merchant ID + merchant private key + Nagad public key; otherwise simulator |
 
 - Keys are AES-256-GCM encrypted with `PAYSIM_SECRETS_KEY` and never returned by
   the API (the dashboard shows identifiers and a masked hint).
@@ -96,6 +97,9 @@ the same PaySim credentials, so client code (QuickFood included) needs no change
 - Public test keys are one click away (SSLCommerz `testbox`, bKash's shared
   tokenized sandbox keys). The public bKash sandbox allows one refund per payment.
 - Scenarios, `SIM:` markers and the fake clock apply to simulator mode only.
+- Nagad issues sandbox keys only to registered merchants and only answers
+  allow-listed servers, so its connection test is an offline key check and the
+  adapter is covered by tests with mocked Nagad responses.
 
 Details: [docs → Real sandbox mode](https://junaaid96.github.io/paysim-bd/concepts/real-sandbox).
 

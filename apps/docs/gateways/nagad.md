@@ -22,4 +22,4 @@ Mutual RSA (PKCS1v15 encrypt, PKCS1v15+SHA256 sign) with **published fake keys**
 
 ## Real sandbox mode
 
-Not offered for Nagad: Nagad issues sandbox keys only to registered merchants, so Nagad apps always run on the simulator. See [Real sandbox mode](../concepts/real-sandbox).
+Optional per store, on the **Real sandbox** page. Nagad issues sandbox keys only to registered merchants: once a store saves its merchant ID, merchant private key and Nagad public key, PaySim calls Nagad's sandbox (initialize, complete, verify, refund); otherwise it stays on the simulator. See [Real sandbox mode](../concepts/real-sandbox).

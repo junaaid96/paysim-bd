@@ -344,6 +344,17 @@ export interface SandboxSupport {
   /** Publicly documented test keys (prefill hint), when the provider publishes them. */
   publicTestKeys?: Record<string, string>;
   validateKeys(input: unknown): CredentialCheck;
+  /** Official sandbox signup / merchant onboarding page. */
+  signupUrl?: string;
+  /**
+   * Check saved keys against the provider sandbox (no payment is created).
+   * `offline` = checked locally only (provider not reachable for a probe).
+   */
+  testConnection?(
+    ctx: { kv?: KeyValueStore },
+    app: AppRecord,
+    keys: Record<string, string>,
+  ): Promise<{ ok: boolean; message: string; offline?: boolean }>;
   /** Refund at the provider; called before the ledger entry is written. */
   settleRefund?(
     ctx: Pick<PluginContext, 'stores' | 'logger' | 'clock'>,

@@ -230,6 +230,25 @@ export const bkashSandbox: SandboxSupport = {
     app_key: '4f6o0cjiki2rfm34kfdadl1eqq',
     app_secret: '2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b',
   },
+  signupUrl: 'https://developer.bka.sh/',
+  async testConnection(ctx, app, keys) {
+    try {
+      await providerToken(
+        ctx.kv,
+        app,
+        {
+          username: keys['username'] ?? '',
+          password: keys['password'] ?? '',
+          appKey: keys['app_key'] ?? '',
+          appSecret: keys['app_secret'] ?? '',
+        },
+        true,
+      );
+      return { ok: true, message: 'bKash sandbox granted a token for these keys.' };
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : String(err) };
+    }
+  },
   validateKeys(input: unknown): CredentialCheck {
     const parsed = KeysSchema.safeParse(input);
     if (!parsed.success) {
