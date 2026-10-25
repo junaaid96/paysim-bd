@@ -47,6 +47,7 @@ Back in the dashboard: the transaction appears with a timeline (events + callbac
 
 Next: [Scenarios](/concepts/scenarios) · [Fake clock](/concepts/clock) · [bKash](/gateways/bkash) · [Nagad](/gateways/nagad)
 
-## Next: Real sandbox mode (optional)
+## Next: Real sandbox (optional extra)
 
-Once your flows pass on the simulator, you can rehearse SSLCommerz and bKash against the providers' own sandboxes from the **Gateways** page. See [Real sandbox mode](./concepts/real-sandbox).
+Once your flows pass on the simulator, you can rehearse SSLCommerz, bKash and Nagad against the providers' own sandboxes from the
+**Real sandbox** page in the sidebar. See [Real sandbox mode](./concepts/real-sandbox).

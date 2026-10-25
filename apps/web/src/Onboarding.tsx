@@ -261,8 +261,7 @@ export function CreateAppForm({ workspace }: { workspace: string }): JSX.Element
         {error && <span className="text-xs text-red-400">{error}</span>}
       </div>
       <p className="mt-3 text-xs text-zinc-600">
-        These are PaySim credentials (fake by design; anything that looks like a real key is
-        rejected). Provider sandbox keys go in an app&apos;s Real sandbox panel. A default app
+        Fake credentials only — the API rejects anything that looks like a real key. A default app
         already exists for each gateway; create more when you need extra stores.
       </p>
     </div>
@@ -326,8 +325,8 @@ export default function Onboarding({ workspace }: { workspace: string }): JSX.El
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-400">
           PaySim BD imitates the gateways&apos; APIs and hosted checkout pages. Drive success,
-          failure, cancel and timeout flows on demand and inspect every request. No real money ever
-          touches this service.
+          failure, cancel and timeout flows on demand and inspect every request. No real money or
+          credentials ever touch this service.
         </p>
         <ol className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           {STEPS.map((step, index) => (
@@ -364,17 +363,16 @@ export default function Onboarding({ workspace }: { workspace: string }): JSX.El
       <section className="card p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="max-w-3xl">
-            <div className="eyebrow">Optional · Real sandbox mode</div>
+            <div className="eyebrow">Optional extra · Real sandbox</div>
             <h2 className="mt-1 text-base font-semibold text-zinc-100">
               Rehearse against the providers&apos; own sandboxes
             </h2>
             <p className="mt-1 text-sm text-zinc-400">
-              Every app starts on the <strong className="text-zinc-200">Simulator</strong>. When you
-              want a final check, open <strong className="text-zinc-200">Gateways</strong>, save
-              that gateway&apos;s sandbox keys and switch the app to{' '}
-              <strong className="text-zinc-200">Real sandbox</strong>. Your app keeps calling this
-              URL with the same PaySim credentials; payments open the provider&apos;s sandbox page,
-              and webhooks, the live feed and refunds keep working.
+              You don&apos;t need this to use PaySim: every store runs on the simulator. For a final
+              check, open <strong className="text-zinc-200">Real sandbox</strong> in the sidebar,
+              save a store&apos;s sandbox keys, test the connection and switch it on. Your app keeps
+              calling this URL with the same PaySim credentials; payments open the provider&apos;s
+              sandbox page, and webhooks, the live feed and refunds keep working.
             </p>
             <ul className="mt-2 space-y-1 text-xs text-zinc-500">
               <li>
@@ -386,13 +384,13 @@ export default function Onboarding({ workspace }: { workspace: string }): JSX.El
                 public test keys are one click away. One refund per payment in the bKash sandbox.
               </li>
               <li>
-                <strong className="text-zinc-300">Nagad</strong> — needs Nagad merchant credentials,
-                so it stays on the simulator.
+                <strong className="text-zinc-300">Nagad</strong> — needs credentials Nagad issues to
+                registered merchants (merchant ID and key pair); until then it uses the simulator.
               </li>
             </ul>
           </div>
-          <a href="#gateways" className="btn-primary">
-            Open Gateways →
+          <a href="#sandbox" className="btn">
+            Open Real sandbox →
           </a>
         </div>
       </section>

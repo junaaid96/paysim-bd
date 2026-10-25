@@ -9,6 +9,7 @@
 // containing SIM:refund_fail simulates a declined refund.
 
 import type { Request, Response, Router } from 'express';
+import { realKeys, settleRealRefund } from './real.js';
 import { z } from 'zod';
 
 import {
@@ -119,6 +120,9 @@ export function mountNagadRefundRoutes(
         reason: data.referenceMessage ?? '',
         source: 'api',
         refundIdPrefix: 'NGRF',
+        ...(realKeys(app) && txn.metadata['sandboxMode'] === 'real'
+          ? { settle: (input) => settleRealRefund(ctx, txn, app, input) }
+          : {}),
         eventData: {
           http: {
             method: 'POST',

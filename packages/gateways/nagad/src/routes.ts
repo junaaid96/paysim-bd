@@ -21,6 +21,7 @@ import {
 } from '@paysim/core';
 
 import {
+  buildCallbackUrl,
   formatAmountMinor,
   generateChallenge,
   generatePaymentReferenceId,
@@ -31,6 +32,7 @@ import { NagadCryptoError, rsaDecrypt, rsaEncrypt, rsaSign, rsaVerify } from './
 import { loadFixtureKeys } from './fixtures.js';
 import { checkoutPage, errorPage, redirectPage } from './pages.js';
 import { mountNagadRefundRoutes } from './refund.js';
+import { providerOrderId, realComplete, realInitialize, realKeys, realVerify } from './real.js';
 import { CHECKOUT_ACTIONS, verifyStatusFor, type CheckoutAction } from './state-machine.js';
 import { asString, firstQueryParam, headersToRecord, isAbsoluteHttpUrl } from './util.js';
 
@@ -224,6 +226,36 @@ export function createNagadRouter(ctx: PluginContext): Router {
         },
       });
       ctx.logger.info('nagad payment initialized', { paymentReferenceId });
+      const keys = realKeys(app);
+      if (keys) {
+        const real = await realInitialize(keys, txn);
+        if (!real.ok) {
+          await ctx.stores.transitionTransaction(
+            txn.id,
+            'failed',
+            'nagad.sandbox.init_failed',
+            { reason: real.reason },
+            { sandboxMode: 'real' },
+          );
+          res.status(400).json(fail(`Nagad sandbox: ${real.reason}`));
+          return;
+        }
+        await ctx.stores.transitionTransaction(
+          txn.id,
+          'initiated',
+          'nagad.sandbox.initialized',
+          { providerRef: real.ref, providerOrderId: providerOrderId(txn) },
+          {
+            sandboxMode: 'real',
+            providerRef: real.ref,
+            providerChallenge: real.challenge,
+            providerOrderId: providerOrderId(txn),
+            providerDateTime: real.dateTime,
+          },
+        );
+        res.status(200).json(sealEnvelope(app, { paymentReferenceId, challenge }));
+        return;
+      }
       // Manual attach schedules the expiry timer; the real scenario (if any)
       // attaches at complete, when customer action becomes possible.
       await ctx.engine.attach({
@@ -351,6 +383,37 @@ export function createNagadRouter(ctx: PluginContext): Router {
           amountMinor: amount.minor,
         },
       );
+      if (updated.metadata['sandboxMode'] === 'real') {
+        const keys = realKeys(app);
+        const real = keys
+          ? await realComplete(
+              keys,
+              updated,
+              amount.minor,
+              `${ctx.simBaseUrl}/nagad/sandbox/callback/${updated.id}`,
+            )
+          : ({ ok: false, reason: 'real-sandbox keys were removed' } as const);
+        if (!real.ok) {
+          await ctx.stores.transitionTransaction(
+            updated.id,
+            'failed',
+            'nagad.sandbox.complete_failed',
+            {
+              reason: real.reason,
+            },
+          );
+          res.status(400).json(fail(`Nagad sandbox: ${real.reason}`));
+          return;
+        }
+        await ctx.stores.recordEvent({
+          workspaceId: updated.workspaceId,
+          transactionId: updated.id,
+          type: 'nagad.sandbox.completed',
+          data: { callBackUrl: real.callBackUrl },
+        });
+        res.status(200).json({ callBackUrl: real.callBackUrl, status: 'Success' });
+        return;
+      }
       await ctx.engine.attach({
         txn: updated,
         scenarioId: resolved.scenarioId,
@@ -502,6 +565,67 @@ export function createNagadRouter(ctx: PluginContext): Router {
     const outcome = action as CheckoutAction;
     const { status, targetUrl } = await completeCheckout({ ctx, txn, outcome });
     res.status(200).send(redirectPage({ status, paymentRefId, targetUrl }));
+  });
+
+  router.get('/nagad/sandbox/callback/:txnId', async (req: Request, res: Response) => {
+    const txnId = asString(req.params['txnId']);
+    const txn = /^[A-Za-z0-9-]{1,64}$/.test(txnId) ? await ctx.stores.getTransaction(txnId) : null;
+    if (!txn || txn.gateway !== GATEWAY || txn.metadata['sandboxMode'] !== 'real') {
+      res.status(404).send(errorPage('Unknown payment', 'No real-sandbox payment here.', 404));
+      return;
+    }
+    const reported = asString(firstQueryParam(req.query['status']));
+    await ctx.stores.recordEvent({
+      workspaceId: txn.workspaceId,
+      transactionId: txn.id,
+      type: 'nagad.sandbox.callback',
+      data: {
+        status: reported,
+        payment_ref_id: asString(firstQueryParam(req.query['payment_ref_id'])),
+      },
+    });
+    const paymentRefId = txn.gatewaySessionKey ?? '';
+    if (txn.state !== 'checkout') {
+      const status =
+        txn.state === 'success' ? 'Success' : txn.state === 'cancelled' ? 'Cancel' : 'Fail';
+      const targetUrl = buildCallbackUrl(asString(txn.metadata['merchantCallbackURL']), {
+        merchant: asString(txn.metadata['merchantId']),
+        orderId: asString(txn.metadata['orderId']),
+        paymentRefId,
+        status,
+      });
+      res.status(200).send(redirectPage({ status, paymentRefId, targetUrl }));
+      return;
+    }
+    // Never trust the redirect: ask Nagad's verify API.
+    let outcome: CheckoutAction = /abort|cancel/i.test(reported) ? 'cancel' : 'fail';
+    let trxId = '';
+    try {
+      const v = await realVerify(asString(txn.metadata['providerRef']));
+      await ctx.stores.recordEvent({
+        workspaceId: txn.workspaceId,
+        transactionId: txn.id,
+        type: 'nagad.sandbox.verified',
+        data: v.raw,
+      });
+      if (v.status === 'Success' && v.amountMinor === txn.amountMinor) {
+        outcome = 'success';
+        trxId = v.issuerPaymentRefNo;
+      } else if (/abort|cancel/i.test(v.status)) {
+        outcome = 'cancel';
+      }
+    } catch (err) {
+      ctx.logger.warn('nagad sandbox verify failed', { error: String(err) });
+    }
+    const done = await completeCheckout({
+      ctx,
+      txn,
+      outcome,
+      ...(trxId ? { providerTrxId: trxId } : {}),
+    });
+    res
+      .status(200)
+      .send(redirectPage({ status: done.status, paymentRefId, targetUrl: done.targetUrl }));
   });
 
   mountNagadRefundRoutes(router, ctx, BASE, { open: openEnvelope, seal: sealEnvelope, fail });

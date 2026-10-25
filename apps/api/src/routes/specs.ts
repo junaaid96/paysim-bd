@@ -21,6 +21,7 @@ export function createSpecsRouter(plugins: GatewayPlugin[]): Router {
               docsUrl: plugin.sandbox.docsUrl,
               fields: plugin.sandbox.fields,
               publicTestKeys: plugin.sandbox.publicTestKeys ?? null,
+              signupUrl: plugin.sandbox.signupUrl ?? null,
             }
           : null,
       })),

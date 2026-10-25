@@ -24,6 +24,12 @@ All notable changes to this project are documented here. The format follows
   SSLCommerz cards / mobile banking / net banking picker, with a persistent
   "PaySim sandbox — test only, no real money" label. No OTP/PIN/card values
   are sent or stored.
+- Real sandbox is now its own sidebar page (marked Extra): per-store keys,
+  connection test, status (not configured / connected / error) and an on/off
+  switch. Store settings and the simulator are unchanged.
+- Nagad real-sandbox adapter (initialize + complete with RSA-sealed data and
+  signature, verify, refund), active only when a store saves Nagad merchant
+  credentials; tested with mocked Nagad responses.
 
 ### Changed
 

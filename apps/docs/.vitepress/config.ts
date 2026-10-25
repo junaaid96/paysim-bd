@@ -26,7 +26,7 @@ export default defineConfig({
           { text: 'Fake clock', link: '/concepts/clock' },
           { text: 'Callbacks & SSRF', link: '/concepts/callbacks' },
           { text: 'Refunds', link: '/concepts/refunds' },
-          { text: 'Real sandbox mode', link: '/concepts/real-sandbox' },
+          { text: 'Real sandbox (extra)', link: '/concepts/real-sandbox' },
         ],
       },
       {

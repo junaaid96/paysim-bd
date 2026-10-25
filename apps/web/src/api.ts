@@ -75,6 +75,7 @@ export const GatewayInfoSchema = z.object({
       docsUrl: z.string(),
       fields: z.array(z.object({ name: z.string(), label: z.string(), secret: z.boolean() })),
       publicTestKeys: z.record(z.string(), z.string()).nullable(),
+      signupUrl: z.string().nullable().default(null),
     })
     .nullable()
     .default(null),
@@ -90,6 +91,27 @@ export async function updateAppSandbox(
   input: { mode: 'simulator' | 'real'; keys?: Record<string, string>; clearKeys?: boolean },
 ): Promise<AppRecord> {
   return PublicAppSchema.parse(await sendJson('PUT', `/api/apps/${appId}/sandbox`, input));
+}
+
+export const SandboxCheckSchema = z.object({
+  lastCheck: z
+    .object({
+      ok: z.boolean(),
+      offline: z.boolean().default(false),
+      message: z.string(),
+      checkedAt: z.string(),
+    })
+    .nullable(),
+});
+export type SandboxCheck = z.infer<typeof SandboxCheckSchema>['lastCheck'];
+
+export async function fetchSandboxStatus(appId: string): Promise<SandboxCheck> {
+  return SandboxCheckSchema.parse(await getJson(`/api/apps/${appId}/sandbox/status`)).lastCheck;
+}
+
+export async function testAppSandbox(appId: string): Promise<SandboxCheck> {
+  return SandboxCheckSchema.parse(await sendJson('POST', `/api/apps/${appId}/sandbox/test`, {}))
+    .lastCheck;
 }
 
 export type {

@@ -26,4 +26,4 @@ Session init + hosted payment page + server-to-server IPN.
 
 ## Real sandbox mode
 
-Optional per app: switch this gateway from the simulator to the provider's own sandbox in **Gateways**, without changing your client. See [Real sandbox mode](../concepts/real-sandbox).
+Optional per app: switch a store from the simulator to the provider's own sandbox on the **Real sandbox** page (sidebar, marked Extra), without changing your client. See [Real sandbox mode](../concepts/real-sandbox).

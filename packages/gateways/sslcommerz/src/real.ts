@@ -257,6 +257,31 @@ export const sslcommerzSandbox: SandboxSupport = {
     { name: 'store_passwd', label: 'Sandbox Store Password', secret: true },
   ],
   publicTestKeys: { store_id: 'testbox', store_passwd: 'qwerty' },
+  signupUrl: 'https://developer.sslcommerz.com/registration/',
+  async testConnection(_ctx, _app, keys) {
+    // Transaction query by an unknown tran_id: creates nothing, but the
+    // provider only answers APIConnect=DONE for valid store credentials.
+    const params = new URLSearchParams({
+      tran_id: `PAYSIM-CHECK-${Date.now()}`,
+      store_id: keys['store_id'] ?? '',
+      store_passwd: keys['store_passwd'] ?? '',
+      format: 'json',
+    });
+    try {
+      const body = await call(
+        `${SSLCZ_SANDBOX_HOST}/validator/api/merchantTransIDvalidationAPI.php?${params.toString()}`,
+      );
+      const connect = asString(body['APIConnect']);
+      if (connect === 'DONE')
+        return { ok: true, message: 'SSLCommerz sandbox accepted the store credentials.' };
+      return {
+        ok: false,
+        message: `SSLCommerz sandbox rejected the store credentials (${connect || 'no APIConnect'}).`,
+      };
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : String(err) };
+    }
+  },
   validateKeys(input: unknown): CredentialCheck {
     const parsed = KeysSchema.safeParse(input);
     if (!parsed.success) {

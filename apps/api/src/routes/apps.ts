@@ -149,6 +149,61 @@ export function createAppsRouter(deps: AppsDeps): Router {
     res.status(201).json({ ...app, sandbox: { mode: 'simulator', configured: false, hints: {} } });
   });
 
+  const CHECK_NS = 'sandbox-check';
+  const CHECK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+  router.get('/:id/sandbox/status', async (req: Request, res: Response) => {
+    const idParam = IdParamSchema.safeParse(req.params);
+    if (!idParam.success) {
+      sendError(res, 400, 'invalid_request', { issues: zodIssues(idParam.error) });
+      return;
+    }
+    const app = await deps.stores.getApp(idParam.data.id);
+    if (!app) {
+      sendError(res, 404, 'not_found');
+      return;
+    }
+    const last = app.sandbox?.keys ? await deps.stores.kv?.get(CHECK_NS, app.id) : null;
+    res.json({ lastCheck: last ?? null });
+  });
+
+  router.post('/:id/sandbox/test', async (req: Request, res: Response) => {
+    const idParam = IdParamSchema.safeParse(req.params);
+    if (!idParam.success) {
+      sendError(res, 400, 'invalid_request', { issues: zodIssues(idParam.error) });
+      return;
+    }
+    const app = await deps.stores.getApp(idParam.data.id);
+    if (!app) {
+      sendError(res, 404, 'not_found');
+      return;
+    }
+    const plugin = deps.plugins.find((candidate) => candidate.name === app.gateway);
+    const support = plugin?.sandbox;
+    if (!support?.testConnection || support.status !== 'available') {
+      sendError(res, 400, 'sandbox_unavailable', {
+        message: `${app.gateway} has no real-sandbox connection test`,
+      });
+      return;
+    }
+    const keys = app.sandbox?.keys;
+    if (!keys) {
+      sendError(res, 400, 'sandbox_keys_required', {
+        message: "Save this gateway's sandbox keys before testing the connection.",
+      });
+      return;
+    }
+    const result = await support.testConnection({ kv: deps.stores.kv }, app, keys);
+    const lastCheck = {
+      ok: result.ok,
+      offline: !!result.offline,
+      message: result.message.slice(0, 300),
+      checkedAt: new Date().toISOString(),
+    };
+    await deps.stores.kv?.set(CHECK_NS, app.id, lastCheck, new Date(Date.now() + CHECK_TTL_MS));
+    res.json({ lastCheck });
+  });
+
   router.put('/:id/sandbox', async (req: Request, res: Response) => {
     const idParam = IdParamSchema.safeParse(req.params);
     const parsed = SandboxUpdateSchema.safeParse(req.body);
@@ -168,6 +223,7 @@ export function createAppsRouter(deps: AppsDeps): Router {
     const plugin = deps.plugins.find((candidate) => candidate.name === app.gateway);
     const support = plugin?.sandbox;
     const { mode, keys, clearKeys } = parsed.data;
+    if (clearKeys || keys) await deps.stores.kv?.delete(CHECK_NS, app.id);
     if (clearKeys) {
       const updated = await deps.queries.updateAppSandbox(app.workspaceKey, app.id, {
         mode: 'simulator',
